@@ -1,23 +1,23 @@
-# GenAI Project — Customer Analytics Dashboard
+# GenAI Project Customer Analytics Dashboard
 
 **DVD Rental Intelligence**  
-President University — Information System  
+President University Information System  
 Team: Fatwa, Marsha, Syakira
 
 
 ## About
 
-GenAI Project is a Customer Analytics Dashboard built on the **dvdrental** PostgreSQL database. This project combines data analytics, machine learning, and a generative AI assistant into one interactive web dashboard — making it easy to explore customer behavior, rental trends, revenue insights, and segment analysis.
+GenAI Project is a Customer Analytics Dashboard built on the **dvdrental** PostgreSQL database. This project combines data analytics, machine learning, and a generative AI assistant into one interactive web dashboard making it easy to explore customer behavior, rental trends, revenue insights, and segment analysis.
 
 
 ## Features
 
 **Dashboard Tabs**
-- Overview — key metrics: total customers, revenue, rentals, avg spend per customer
-- Behavior — favorite genres, rental frequency, duration, and revenue correlation
-- Loyalty & Segments — RFM-based segmentation and spending tier breakdown
-- Customer Detail — individual customer lookup with full rental and payment history
-- ML Predictions — revenue forecasting and churn risk using Linear Regression & Random Forest
+- Overview key metrics: total customers, revenue, rentals, avg spend per customer
+- Behavior favorite genres, rental frequency, duration, and revenue correlation
+- Loyalty & Segments RFM-based segmentation and spending tier breakdown
+- Customer Detail individual customer lookup with full rental and payment history
+- ML Predictions revenue forecasting and churn risk using Linear Regression & Random Forest
 
 **AI Chatbot (FAMS AI)**
 - Natural language assistant powered by Groq API
@@ -28,7 +28,7 @@ GenAI Project is a Customer Analytics Dashboard built on the **dvdrental** Postg
 **Interactive Charts**
 - Top N Customers by Spending (adjustable slider)
 - Customer by Country
-- Favorite Genres — horizontal bar, vertical bar, pie, donut
+- Favorite Genres horizontal bar, vertical bar, pie, donut
 - Scatter plot: rentals vs revenue
 - Rental frequency and duration distribution
 - Cumulative revenue over time
