@@ -76,4 +76,4 @@ GenAI-Project/
 ├── test_groq.py            # Groq API connection test
 └── .gitignore
 
-FAMS Team — Fatwa, Marsha, Syakira.
+FAMS Team: Fatwa, Marsha, Syakira.
