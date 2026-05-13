@@ -1,0 +1,3551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>📼 Customer Analytics Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+<style>
+:root {
+  --navy:#1E2D5A; --navy2:#26386E; --navy3:#2E4080;
+  --pink:#D4607A; --pink2:#F0AEC0; --slate:#3A4A6B;
+  --gray:#8A97B5; --border:#E4E9F2; --bg:#F4F6FB;
+  --white:#FFFFFF; --green:#2EC4A0; --amber:#F0A830;
+  --shadow-sm:0 2px 10px rgba(30,45,90,0.05);
+  --shadow-md:0 8px 28px rgba(30,45,90,0.10);
+  --shadow-lg:0 20px 60px rgba(30,45,90,0.15);
+  --radius:14px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--slate);min-height:100vh;display:flex;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:#C8D0E4;border-radius:4px;}
+::-webkit-scrollbar-thumb:hover{background:var(--pink);}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideRight{from{opacity:0;transform:translateX(-20px);}to{opacity:1;transform:translateX(0);}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(212,96,122,0.18);}50%{box-shadow:0 0 0 8px rgba(212,96,122,0);}}
+@keyframes thinking{0%,80%,100%{transform:scale(0);opacity:0.3;}40%{transform:scale(1);opacity:1;}}
+@keyframes chatSlideIn{from{opacity:0;transform:translateY(20px) scale(0.95);}to{opacity:1;transform:translateY(0) scale(1);}}
+
+/* ── SIDEBAR ── */
+.sidebar{width:256px;min-height:100vh;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:1.2rem 1rem;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;}
+.sb-brand{text-align:center;padding-bottom:1.2rem;border-bottom:1px solid var(--border);margin-bottom:1.2rem;}
+.sb-logo{display:flex;justify-content:center;margin-bottom:0.5rem;}
+.sb-logo svg{filter:drop-shadow(0 4px 12px rgba(212,96,122,0.25));}
+.sb-brand-name{font-size:0.85rem;font-weight:700;color:var(--navy);display:block;margin-top:0.3rem;}
+.sb-brand-sub{font-size:0.68rem;color:var(--gray);}
+.sb-section{margin-bottom:1rem;}
+.sb-section-label{font-size:0.78rem;font-weight:700;color:var(--slate);margin-bottom:0.55rem;display:block;}
+.sb-select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.42rem 0.75rem;font-size:0.80rem;font-family:'Inter',sans-serif;color:var(--slate);outline:none;transition:border-color 0.2s;}
+.sb-select:focus{border-color:var(--pink);}
+.sb-slider{width:100%;accent-color:var(--pink);cursor:pointer;margin-top:0.3rem;}
+.sb-slider-val{font-size:0.72rem;color:var(--gray);margin-top:0.3rem;}
+.sb-check-group{display:flex;flex-direction:column;gap:0.38rem;}
+.sb-check{display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.78rem;color:var(--slate);}
+.sb-check input[type=checkbox]{accent-color:var(--pink);width:14px;height:14px;cursor:pointer;}
+.sb-divider{border:none;border-top:1px solid var(--border);margin:0.9rem 0;}
+.sb-range-row{display:flex;gap:0.4rem;align-items:center;margin-top:0.4rem;}
+.sb-range-select{flex:1;}
+
+/* ── MAIN ── */
+.main{flex:1;padding:1.6rem 2rem;overflow-x:hidden;min-width:0;}
+
+/* ── HERO ── */
+.hero{background:linear-gradient(135deg,#1E2D5A 0%,#26386E 70%,#2E4080 100%);border-radius:18px;padding:2rem 2rem 1.8rem;margin-bottom:1.6rem;display:flex;align-items:center;gap:1.4rem;animation:fadeUp 0.6s ease both;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;background:rgba(212,96,122,0.06);border-radius:50%;pointer-events:none;}
+.hero-logo-icon{width:64px;height:64px;background:rgba(255,255,255,0.10);border:1.5px solid rgba(255,255,255,0.18);border-radius:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;animation:pulse 2.8s ease-in-out infinite;}
+.hero-text h1{font-size:1.65rem;font-weight:800;color:#fff;margin:0 0 0.25rem;letter-spacing:-0.4px;}
+.hero-text p{font-size:0.83rem;color:#A8B8D8;margin:0;}
+.hero-badge{margin-left:auto;flex-shrink:0;background:rgba(212,96,122,0.2);border:1px solid rgba(212,96,122,0.4);border-radius:20px;padding:0.35rem 0.9rem;font-size:0.72rem;font-weight:600;color:#F0A0B5;letter-spacing:0.8px;text-transform:uppercase;}
+
+/* ── SECTION LABEL ── */
+.sec-label{font-size:0.68rem;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:1.4px;margin:1.8rem 0 0.8rem;display:flex;align-items:center;gap:0.6rem;animation:slideRight 0.5s ease both;}
+.sec-label::after{content:'';flex:1;height:1px;background:linear-gradient(to right,var(--border),transparent);}
+
+/* ── TABS ── */
+.tab-bar{display:flex;border-bottom:1px solid var(--border);margin-bottom:1.6rem;}
+.tab-btn{padding:0.65rem 1.2rem;font-size:0.82rem;font-weight:600;color:var(--gray);border:none;background:none;border-bottom:2px solid transparent;cursor:pointer;transition:all 0.2s;font-family:'Inter',sans-serif;}
+.tab-btn:hover{color:var(--navy);}
+.tab-btn.active{color:var(--navy);border-bottom-color:var(--pink);}
+.tab-panel{display:none;animation:fadeUp 0.4s ease both;}
+.tab-panel.active{display:block;}
+
+/* ── KPI ── */
+.kpi-grid{display:grid;gap:1rem;margin-bottom:1.2rem;}
+.kpi-grid-5{grid-template-columns:repeat(5,1fr);}
+.kpi-grid-4{grid-template-columns:repeat(4,1fr);}
+.kpi-grid-3{grid-template-columns:repeat(3,1fr);}
+.kpi{background:var(--white);border-radius:var(--radius);padding:1.3rem 1.4rem;border:1px solid var(--border);box-shadow:var(--shadow-sm);transition:transform 0.2s,box-shadow 0.2s;animation:fadeUp 0.5s ease both;height:100%;}
+.kpi:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);}
+.kpi-label{font-size:0.70rem;font-weight:600;text-transform:uppercase;letter-spacing:0.9px;color:var(--gray);margin-bottom:0.5rem;}
+.kpi-val{font-size:1.5rem;font-weight:800;color:var(--navy);line-height:1.1;margin-bottom:0.3rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.kpi-sub{font-size:0.73rem;color:var(--pink);font-weight:500;}
+.kpi-dot{width:8px;height:8px;border-radius:50%;background:var(--pink);display:inline-block;margin-right:0.35rem;animation:pulse 2s infinite;}
+
+/* ── CHART WRAP ── */
+.chart-wrap{background:var(--white);border-radius:var(--radius);padding:1.2rem 1.3rem 0.4rem;border:1px solid var(--border);box-shadow:var(--shadow-sm);margin-bottom:1rem;animation:fadeUp 0.55s ease both;transition:box-shadow 0.2s,transform 0.15s;}
+.chart-wrap{position:relative;}
+.chart-title{font-size:0.9rem;font-weight:700;color:var(--navy);margin-bottom:0.1rem;}
+.chart-sub{font-size:0.75rem;color:var(--gray);margin-bottom:0.7rem;}
+
+/* ── GRIDS ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.grid-ratio{display:grid;grid-template-columns:1fr 1.5fr;gap:1rem;}
+.grid-ratio2{display:grid;grid-template-columns:1fr 1.4fr;gap:1rem;}
+
+/* ── INSIGHT CARDS ── */
+.insight-row{display:flex;gap:1rem;margin-bottom:1.6rem;animation:fadeUp 0.6s ease 0.2s both;}
+.insight-card{flex:1;background:var(--white);border-radius:var(--radius);border:1px solid var(--border);border-left:5px solid var(--pink);padding:1.3rem 1.4rem;box-shadow:0 4px 16px rgba(30,45,90,0.07);transition:transform 0.2s,box-shadow 0.2s;}
+.insight-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(30,45,90,0.11);}
+.insight-card h4{font-size:0.72rem;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:1px;margin:0 0 0.5rem;}
+.insight-num{font-size:2rem;font-weight:800;color:var(--navy);line-height:1;margin-bottom:0.4rem;display:block;}
+.insight-card p{font-size:0.83rem;color:#5A6A8A;margin:0;line-height:1.55;}
+
+/* ── TABLE ── */
+.table-wrap{max-height:380px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);}
+.data-table{width:100%;border-collapse:collapse;font-size:0.82rem;}
+.data-table th{background:var(--bg);color:var(--navy);font-size:0.70rem;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;padding:0.7rem 1rem;text-align:left;border-bottom:2px solid var(--border);position:sticky;top:0;z-index:1;}
+.data-table td{padding:0.6rem 1rem;border-bottom:1px solid var(--border);color:var(--slate);}
+.data-table tr:hover td{background:rgba(212,96,122,0.03);}
+.seg-badge{display:inline-block;padding:0.2rem 0.7rem;border-radius:20px;font-size:0.68rem;font-weight:700;letter-spacing:0.5px;}
+
+/* ── ALERT BOXES ── */
+.warning-box{background:rgba(240,168,48,0.08);border:1px solid rgba(240,168,48,0.3);border-radius:10px;padding:0.75rem 1rem;font-size:0.83rem;color:#7A5A00;margin-bottom:1rem;}
+.success-box{background:rgba(46,196,160,0.08);border:1px solid rgba(46,196,160,0.3);border-radius:10px;padding:0.75rem 1rem;font-size:0.83rem;color:#1A6A50;margin-bottom:1rem;}
+.info-box{background:rgba(30,45,90,0.04);border:1px solid rgba(30,45,90,0.12);border-radius:10px;padding:0.85rem 1rem;font-size:0.83rem;color:var(--slate);margin-bottom:1rem;}
+
+/* ── SEARCH ── */
+.search-wrap{position:relative;margin-bottom:1rem;}
+.search-icon{position:absolute;left:0.9rem;top:50%;transform:translateY(-50%);color:var(--gray);}
+.search-input{width:100%;padding:0.65rem 0.9rem 0.65rem 2.5rem;border:1px solid var(--border);border-radius:10px;font-size:0.85rem;font-family:'Inter',sans-serif;outline:none;transition:border-color 0.2s;background:var(--white);}
+.search-input:focus{border-color:var(--pink);}
+.search-select{display:block;margin-bottom:0.75rem;max-width:400px;padding:0.5rem 0.75rem;border:1px solid var(--border);border-radius:8px;font-size:0.82rem;font-family:'Inter',sans-serif;color:var(--slate);background:var(--white);outline:none;}
+.search-select:focus{border-color:var(--pink);}
+
+/* ── CUSTOMER PROFILE ── */
+.cust-profile-card{background:linear-gradient(135deg,var(--navy),var(--navy3));border-radius:14px;padding:1.3rem 1.6rem;display:flex;gap:1rem;align-items:center;margin-bottom:1rem;}
+.cust-profile-avatar{font-size:2.5rem;}
+.cust-profile-name{font-size:1.2rem;font-weight:800;color:#fff;}
+.cust-profile-sub{font-size:0.8rem;color:#A8B8D8;margin-top:4px;}
+
+/* ── EXPANDER ── */
+.expander{border:1px solid var(--border);border-radius:var(--radius);margin-bottom:1rem;overflow:hidden;}
+.expander-header{padding:0.85rem 1.1rem;background:var(--white);display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-size:0.85rem;font-weight:600;color:var(--navy);border:none;width:100%;text-align:left;font-family:'Inter',sans-serif;transition:background 0.2s;}
+.expander-header:hover{background:var(--bg);}
+.expander-body{display:none;padding:1rem;background:var(--white);border-top:1px solid var(--border);}
+.expander-body.open{display:block;}
+.expander-arrow{transition:transform 0.2s;}
+.expander-arrow.open{transform:rotate(180deg);}
+
+/* ── FOOTER ── */
+.footer{text-align:center;font-size:0.70rem;color:#B0BAD0;padding:2rem 0 1rem;}
+
+/* ══════════════════════════════════════════════════════
+   AI CHATBOT
+══════════════════════════════════════════════════════ */
+.chat-fab{position:fixed;bottom:2rem;right:2rem;z-index:1000;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--navy),var(--navy3));border:none;cursor:pointer;box-shadow:0 8px 32px rgba(30,45,90,0.35);display:flex;align-items:center;justify-content:center;transition:transform 0.2s,box-shadow 0.2s;animation:pulse 3s infinite;}
+.chat-fab:hover{transform:scale(1.08);box-shadow:0 12px 40px rgba(30,45,90,0.45);}
+.chat-fab svg{color:#fff;width:26px;height:26px;}
+.chat-badge{position:absolute;top:-4px;right:-4px;background:var(--pink);color:#fff;border-radius:50%;width:20px;height:20px;font-size:0.62rem;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff;}
+.chat-window{position:fixed;bottom:6rem;right:2rem;z-index:999;width:430px;background:var(--white);border-radius:20px;box-shadow:var(--shadow-lg);border:1px solid var(--border);display:flex;flex-direction:column;overflow:visible;animation:chatSlideIn 0.3s ease both;resize:none;min-width:320px;min-height:420px;max-width:90vw;max-height:80vh;}
+.chat-window .chat-msgs{overflow-y:auto;}
+.chat-window .thinking-panel.open{overflow-y:auto;}.chat-window.hidden{display:none;}
+.chat-header{background:linear-gradient(135deg,var(--navy),var(--navy3));padding:1rem 1.2rem;display:flex;align-items:center;gap:0.75rem;flex-shrink:0;cursor:move;user-select:none;}
+.chat-avatar{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.12);border:1.5px solid rgba(212,96,122,0.5);display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
+.chat-header-info{flex:1;}
+.chat-header-name{font-size:0.88rem;font-weight:700;color:#fff;}
+.chat-header-status{font-size:0.70rem;color:#A8B8D8;display:flex;align-items:center;gap:0.35rem;}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;}
+.chat-header-actions{display:flex;gap:0.5rem;}
+.chat-header-btn{width:28px;height:28px;border-radius:6px;background:rgba(255,255,255,0.1);border:none;cursor:pointer;color:#fff;font-size:0.85rem;display:flex;align-items:center;justify-content:center;transition:background 0.2s;}
+.chat-header-btn:hover{background:rgba(255,255,255,0.2);}
+.provider-badge{display:inline-flex;align-items:center;gap:0.35rem;background:rgba(46,192,160,0.15);border:1px solid rgba(46,192,160,0.35);border-radius:6px;padding:0.18rem 0.55rem;font-size:0.62rem;font-weight:600;color:var(--green);}
+
+/* Thinking panel */
+.thinking-panel{background:rgba(212,96,122,0.04);border-bottom:1px solid var(--border);padding:0;max-height:0;overflow:hidden;transition:all 0.3s;flex-shrink:0;}
+.thinking-panel.open{padding:0.75rem 1.2rem;max-height:200px;overflow-y:auto;}
+.thinking-label{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--pink);margin-bottom:0.4rem;display:flex;align-items:center;gap:0.4rem;}
+.thinking-dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--pink);margin:0 1.5px;animation:thinking 1.4s infinite;}
+.thinking-dots span:nth-child(2){animation-delay:0.2s;}
+.thinking-dots span:nth-child(3){animation-delay:0.4s;}
+.thinking-text{font-size:0.74rem;color:var(--gray);line-height:1.55;font-family:monospace;white-space:pre-wrap;}
+
+/* API Setup */
+.api-setup{padding:1.1rem;border-bottom:1px solid var(--border);background:rgba(212,96,122,0.03);flex-shrink:0;}
+.api-setup-title{font-size:0.78rem;font-weight:700;color:var(--navy);margin-bottom:0.4rem;}
+.api-setup-desc{font-size:0.72rem;color:var(--gray);margin-bottom:0.55rem;line-height:1.5;}
+.api-input-row{display:flex;gap:0.5rem;}
+.api-key-input{flex:1;padding:0.48rem 0.75rem;border:1px solid var(--border);border-radius:8px;font-size:0.78rem;font-family:monospace;outline:none;transition:border-color 0.2s;}
+.api-key-input:focus{border-color:var(--pink);}
+.api-save-btn{padding:0.48rem 1rem;border-radius:8px;background:var(--pink);color:#fff;border:none;cursor:pointer;font-size:0.78rem;font-weight:600;font-family:'Inter',sans-serif;transition:all 0.2s;}
+.api-save-btn:hover{background:#c05070;}
+
+/* Chat messages */
+.chat-msgs{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:0.75rem;min-height:180px;}
+.msg{display:flex;gap:0.6rem;max-width:100%;animation:fadeUp 0.3s ease both;}
+.msg.user{flex-direction:row-reverse;}
+.msg-avatar{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.85rem;margin-top:2px;}
+.msg.ai .msg-avatar{background:rgba(30,45,90,0.08);}
+.msg.user .msg-avatar{background:rgba(212,96,122,0.10);}
+.msg-bubble{max-width:78%;padding:0.65rem 0.9rem;border-radius:14px;font-size:0.82rem;line-height:1.6;}
+.msg.ai .msg-bubble{background:var(--bg);color:var(--slate);border-bottom-left-radius:4px;border:1px solid var(--border);}
+.msg.user .msg-bubble{background:linear-gradient(135deg,var(--navy),var(--navy3));color:#fff;border-bottom-right-radius:4px;}
+.msg-time{font-size:0.65rem;color:var(--gray);margin-top:0.25rem;display:block;}
+.msg.user .msg-time{text-align:right;}
+.typing-indicator{display:flex;gap:4px;padding:0.4rem 0.2rem;}
+.typing-indicator span{width:7px;height:7px;border-radius:50%;background:var(--gray);animation:thinking 1.2s infinite;}
+.typing-indicator span:nth-child(2){animation-delay:0.15s;}
+.typing-indicator span:nth-child(3){animation-delay:0.3s;}
+
+/* Chips */
+.chip-row{display:flex;gap:0.4rem;flex-wrap:wrap;padding:0.6rem 1rem;border-top:1px solid var(--border);flex-shrink:0;}
+.chip{padding:0.3rem 0.75rem;border-radius:20px;background:var(--bg);border:1px solid var(--border);font-size:0.72rem;font-weight:500;color:var(--slate);cursor:pointer;transition:all 0.2s;font-family:'Inter',sans-serif;}
+.chip:hover{background:rgba(212,96,122,0.08);border-color:rgba(212,96,122,0.3);color:var(--pink);}
+
+/* Input */
+.chat-input-area{padding:0.75rem 1rem;border-top:1px solid var(--border);display:flex;gap:0.6rem;align-items:flex-end;flex-shrink:0;}
+.chat-input{flex:1;border:1px solid var(--border);border-radius:12px;padding:0.6rem 0.9rem;font-size:0.83rem;font-family:'Inter',sans-serif;outline:none;resize:none;min-height:38px;max-height:120px;line-height:1.5;color:var(--slate);transition:border-color 0.2s;}
+.chat-input:focus{border-color:var(--pink);}
+.chat-send{width:38px;height:38px;border-radius:10px;flex-shrink:0;background:linear-gradient(135deg,var(--navy),var(--navy3));border:none;cursor:pointer;color:#fff;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.chat-send:hover{transform:scale(1.05);}
+.chat-send:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+.chat-mic{width:38px;height:38px;border-radius:10px;flex-shrink:0;background:var(--bg);border:1px solid var(--border);cursor:pointer;color:var(--slate);display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
+.chat-mic:hover{border-color:var(--pink);color:var(--pink);}
+.chat-mic.recording{background:var(--pink);border-color:var(--pink);color:#fff;animation:pulse 1s infinite;}
+.chat-resize-hint{text-align:center;font-size:0.62rem;color:var(--gray);padding:0.2rem;user-select:none;}
+/* ── Custom resize handles (semua sisi) ── */
+.resize-handle{position:absolute;z-index:10;}
+.resize-handle.n {top:-4px;left:12px;right:12px;height:8px;cursor:n-resize;}
+.resize-handle.s {bottom:-4px;left:12px;right:12px;height:8px;cursor:s-resize;}
+.resize-handle.e {right:-4px;top:12px;bottom:12px;width:8px;cursor:e-resize;}
+.resize-handle.w {left:-4px;top:12px;bottom:12px;width:8px;cursor:w-resize;}
+.resize-handle.ne{top:-4px;right:-4px;width:14px;height:14px;cursor:ne-resize;}
+.resize-handle.nw{top:-4px;left:-4px;width:14px;height:14px;cursor:nw-resize;}
+.resize-handle.se{bottom:-4px;right:-4px;width:14px;height:14px;cursor:se-resize;background:rgba(212,96,122,0.3);border-radius:0 0 4px 0;}
+.resize-handle.sw{bottom:-4px;left:-4px;width:14px;height:14px;cursor:sw-resize;}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo">
+      <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+        <rect width="52" height="52" rx="14" fill="#1E2D5A"/>
+        <rect x="1" y="1" width="50" height="50" rx="13" stroke="rgba(212,96,122,0.3)" stroke-width="1"/>
+        <rect x="10" y="30" width="6" height="12" rx="2" fill="#3A4F8A"/>
+        <rect x="19" y="22" width="6" height="20" rx="2" fill="#5A72A8"/>
+        <rect x="28" y="16" width="6" height="26" rx="2" fill="#7A90C0"/>
+        <rect x="37" y="10" width="6" height="32" rx="2" fill="#D4607A"/>
+        <polyline points="13,29 22,21 31,15 40,9" fill="none" stroke="#F0AEC0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="40" cy="9" r="2.5" fill="#F0AEC0"/>
+        <circle cx="13" cy="29" r="1.8" fill="rgba(240,174,192,0.6)"/>
+        <circle cx="22" cy="21" r="1.8" fill="rgba(240,174,192,0.6)"/>
+        <circle cx="31" cy="15" r="1.8" fill="rgba(240,174,192,0.6)"/>
+      </svg>
+    </div>
+    <span class="sb-brand-name">Customer Analytics</span>
+    <span class="sb-brand-sub">DVD Rental Intelligence</span>
+  </div>
+
+  <div class="sb-section">
+    <span class="sb-section-label">🏆 Top N Customers</span>
+    <input type="range" class="sb-slider" id="topN" min="5" max="30" step="5" value="10" oninput="onTopNChange(this.value)"/>
+    <div class="sb-slider-val">Showing top <strong id="topNDisplay">10</strong> customers</div>
+  </div>
+
+  <hr class="sb-divider"/>
+
+  <div class="sb-section">
+    <span class="sb-section-label">📅 Month Range</span>
+    <div class="sb-range-row">
+      <select class="sb-select sb-range-select" id="monthFrom" onchange="applyFilters()"></select>
+      <span style="font-size:0.75rem;color:var(--gray);">→</span>
+      <select class="sb-select sb-range-select" id="monthTo" onchange="applyFilters()"></select>
+    </div>
+  </div>
+
+  <hr class="sb-divider"/>
+
+  <div class="sb-section">
+    <span class="sb-section-label">👥 Filter Spending Segment</span>
+    <div class="sb-check-group">
+      <label class="sb-check"><input type="checkbox" checked data-seg="Low Spender"  onchange="applyFilters()"/> Low Spender</label>
+      <label class="sb-check"><input type="checkbox" checked data-seg="Mid Spender"  onchange="applyFilters()"/> Mid Spender</label>
+      <label class="sb-check"><input type="checkbox" checked data-seg="High Spender" onchange="applyFilters()"/> High Spender</label>
+      <label class="sb-check"><input type="checkbox" checked data-seg="Top Spender"  onchange="applyFilters()"/> Top Spender</label>
+    </div>
+  </div>
+
+  <hr class="sb-divider"/>
+
+  <div class="sb-section">
+    <span class="sb-section-label" style="color:var(--gray);">🔌 DB Connection</span>
+    <div style="font-size:0.70rem;color:var(--gray);line-height:1.6;">
+      <strong style="color:var(--slate);">dvdrental</strong> @ localhost:5432<br>
+      <span style="color:var(--amber);">⚠️ Demo mode. Connect backend for live DB.</span>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-logo-icon">
+      <svg width="40" height="40" viewBox="0 0 52 52" fill="none">
+        <rect x="10" y="30" width="6" height="12" rx="2" fill="rgba(255,255,255,0.2)"/>
+        <rect x="19" y="22" width="6" height="20" rx="2" fill="rgba(255,255,255,0.3)"/>
+        <rect x="28" y="16" width="6" height="26" rx="2" fill="rgba(255,255,255,0.45)"/>
+        <rect x="37" y="10" width="6" height="32" rx="2" fill="#D4607A"/>
+        <polyline points="13,29 22,21 31,15 40,9" fill="none" stroke="#F0AEC0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="40" cy="9" r="2.5" fill="#F0AEC0"/>
+        <circle cx="13" cy="29" r="1.8" fill="rgba(240,174,192,0.5)"/>
+        <circle cx="22" cy="21" r="1.8" fill="rgba(240,174,192,0.5)"/>
+        <circle cx="31" cy="15" r="1.8" fill="rgba(240,174,192,0.5)"/>
+      </svg>
+    </div>
+    <div class="hero-text">
+      <h1>Customer Analytics Dashboard</h1>
+      <p>Revenue · Behavior · Loyalty · Segmentation — dvdrental</p>
+    </div>
+    <div class="hero-badge">🤖 AI-Powered</div>
+  </div>
+
+  <!-- KPI ROW -->
+  <div class="sec-label">Key Metrics</div>
+  <div class="kpi-grid kpi-grid-5" id="kpiRow"></div>
+  <br>
+
+  <!-- TABS -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="setTab('overview')"  id="tab-overview">Overview</button>
+    <button class="tab-btn"        onclick="setTab('behavior')"  id="tab-behavior">Behavior</button>
+    <button class="tab-btn"        onclick="setTab('loyalty')"   id="tab-loyalty">Loyalty &amp; Segments</button>
+    <button class="tab-btn"        onclick="setTab('detail')"    id="tab-detail">Customer Detail</button>
+    <button class="tab-btn"        onclick="setTab('ml')"        id="tab-ml">🤖 ML Predictions</button>
+  </div>
+
+  <!-- TAB 1: OVERVIEW -->
+  <div class="tab-panel active" id="panel-overview">
+    <div data-section="revenue-trend">
+      <div class="sec-label">Revenue Trend</div>
+      <div id="sort-overview-top">
+        <div class="chart-wrap" data-chart="monthly">
+          <div class="chart-title">Monthly Revenue &amp; Transactions</div>
+          <div class="chart-sub">Total payment collected per month — filtered by sidebar date range</div>
+          <div id="chart-monthly" style="height:300px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div data-section="customer-overview">
+      <div class="sec-label">Customer Overview</div>
+      <div class="grid-2" id="sort-overview-grid">
+        <div class="chart-wrap" data-chart="topcust">
+          <div class="chart-title" id="top-cust-title">Top 10 Customers by Spending</div>
+          <div class="chart-sub" id="top-cust-sub">Loading...</div>
+          <div id="chart-top-cust" style="height:420px;"></div>
+        </div>
+        <div class="chart-wrap" data-chart="geo">
+          <div class="chart-title">Customer by Country</div>
+          <div class="chart-sub">Top 15 countries by number of customers</div>
+          <div id="chart-geo" style="height:400px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: BEHAVIOR -->
+  <div class="tab-panel" id="panel-behavior">
+    <div data-section="rental-behavior">
+      <div class="sec-label">Customer Rental Behavior</div>
+      <div class="grid-2" id="sort-behavior-top">
+        <div class="chart-wrap" data-chart="genre">
+          <div class="chart-title">Favorite Genres</div>
+          <div class="chart-sub">What kind of films do customers love to rent?</div>
+          <div id="chart-genre" style="height:400px;"></div>
+        </div>
+        <div class="chart-wrap" data-chart="scatter">
+          <div class="chart-title">More Rentals = More Revenue</div>
+          <div class="chart-sub">Each dot = 1 customer — dashed line shows the trend</div>
+          <div id="chart-scatter" style="height:400px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div data-section="rental-distribution">
+      <div class="sec-label">Rental Distribution</div>
+      <div class="grid-2" id="sort-behavior-mid">
+        <div class="chart-wrap" data-chart="freq">
+          <div class="chart-title">Rental Frequency Distribution</div>
+          <div class="chart-sub">Number of customers grouped by how many times they have rented</div>
+          <div id="chart-freq" style="height:300px;"></div>
+        </div>
+        <div class="chart-wrap" data-chart="dur">
+          <div class="chart-title">How Long Do Customers Keep DVDs?</div>
+          <div class="chart-sub">Most rentals returned within a few days — supports steady cash flow</div>
+          <div id="chart-dur" style="height:300px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div data-section="revenue-growth">
+      <div class="sec-label">Revenue Growth</div>
+      <div id="sort-behavior-bot">
+        <div class="chart-wrap" data-chart="cumrev">
+          <div class="chart-title">Cumulative Revenue Growth</div>
+          <div class="chart-sub">How customer spending has accumulated over time</div>
+          <div id="chart-cumrev" style="height:260px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: LOYALTY & SEGMENTS -->
+  <div class="tab-panel" id="panel-loyalty">
+    <div data-section="rfm-segmentation">
+      <div class="sec-label">RFM Segmentation</div>
+      <p style="font-size:0.8rem;color:var(--gray);margin:-0.5rem 0 1rem;">Based on Recency, Frequency, Monetary — who is the best customer?</p>
+      <div class="grid-ratio">
+        <div class="chart-wrap" data-chart="segDonut">
+          <div class="chart-title">Segment Distribution</div>
+          <div class="chart-sub">Proporsi customer per segment RFM</div>
+          <div id="chart-seg-donut" style="height:320px;"></div>
+        </div>
+        <div class="chart-wrap" data-chart="segBar">
+          <div class="chart-title">Avg Spending per Segment</div>
+          <div class="chart-sub">Champions and loyal customers make the biggest contribution</div>
+          <div id="chart-seg-bar" style="height:320px;"></div>
+        </div>
+      </div>
+      <div class="kpi-grid kpi-grid-3" id="seg-kpi-row" style="margin-bottom:1rem;"></div>
+    </div>
+
+    <div data-section="spending-tier">
+      <div class="sec-label">Spending Tier Analysis</div>
+      <div class="grid-ratio2">
+        <div class="chart-wrap" data-chart="tierDonut">
+          <div class="chart-title">Customer Count per Spending Tier</div>
+          <div class="chart-sub">Customer Distribution based on Spending Tiers</div>
+          <div id="chart-tier-donut" style="height:300px;"></div>
+        </div>
+        <div class="chart-wrap" data-chart="tierRev">
+          <div class="chart-title">Revenue Contribution by Spending Tier</div>
+          <div class="chart-sub">Which tier actually drives the most revenue?</div>
+          <div id="chart-tier-rev" style="height:300px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div data-section="loyal-region">
+      <div class="sec-label">🌍 Loyal Customer by Region</div>
+      <div class="grid-2">
+        <div class="chart-wrap" data-chart="loyalRegion">
+          <div class="chart-title">Loyal & Champions by Country</div>
+          <div class="chart-sub">Top countries contributing to loyal customer base</div>
+          <div id="chart-loyal-region" style="height:320px;"></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">Region Revenue from Loyal Customers</div>
+          <div class="chart-sub">Revenue contribution per country — Loyal + Champions only</div>
+          <div id="chart-loyal-revenue-region" style="height:320px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div data-section="at-risk">
+      <div class="sec-label">⚠️ At-Risk Customers</div>
+      <div id="atrisk-section"></div>
+    </div>
+
+    <div data-section="key-insights">
+      <div class="sec-label">Key Insights</div>
+      <div class="insight-row" id="insight-row"></div>
+    </div>
+  </div>
+
+  <!-- TAB 4: CUSTOMER DETAIL -->
+  <div class="tab-panel" id="panel-detail">
+    <div class="sec-label">Deep Dive — Individual Customer</div>
+    <p style="font-size:0.8rem;color:var(--gray);margin:-0.5rem 0 1rem;">Search a customer and explore their full rental history &amp; preferences.</p>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" id="custSearch" placeholder="e.g. Eleanor, Karl, Marion..." oninput="searchCustomer(this.value)"/>
+    </div>
+    <div id="cust-select-wrap" style="display:none;">
+      <select class="search-select" id="custSelect" onchange="loadCustDetail()"></select>
+    </div>
+    <div id="cust-empty" class="info-box">👆 Type a customer name above to see their profile.</div>
+    <div id="cust-profile"></div>
+  </div>
+
+  <!-- TAB 5: ML PREDICTIONS -->
+  <div class="tab-panel" id="panel-ml">
+    <div class="sec-label">🤖 Machine Learning Predictions</div>
+    <p style="font-size:0.8rem;color:var(--gray);margin:-0.5rem 0 1rem;">Prediksi berbasis data menggunakan scikit-learn. Pastikan backend_v2.py sudah berjalan.</p>
+    <div class="grid-2">
+      <div class="chart-wrap">
+        <div class="chart-title">📈 Revenue Forecast (Linear Regression)</div>
+        <div class="chart-sub">Prediksi revenue bulan depan berdasarkan tren historis</div>
+        <div id="ml-revenue-result" style="padding:1rem;color:var(--gray);font-size:0.83rem;">
+          <button onclick="loadMLRevenue()" style="padding:0.5rem 1.2rem;background:var(--navy);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.83rem;font-weight:600;">🔮 Run Revenue Prediction</button>
+        </div>
+        <div id="chart-ml-revenue" style="height:260px;"></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">⚠️ Churn Prediction (Random Forest)</div>
+        <div class="chart-sub">Customer mana yang berpotensi tidak kembali rental?</div>
+        <div id="ml-churn-result" style="padding:1rem;color:var(--gray);font-size:0.83rem;">
+          <button onclick="loadMLChurn()" style="padding:0.5rem 1.2rem;background:var(--navy);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.83rem;font-weight:600;">🔮 Run Churn Prediction</button>
+        </div>
+      </div>
+    </div>
+    <div id="ml-churn-table" style="margin-top:1rem;"></div>
+  </div>
+
+  <div class="footer">Customer Analytics &nbsp;·&nbsp; DVD Rental Intelligence &nbsp;·&nbsp; 🤖 AI-Powered by Groq</div>
+</main>
+
+<!-- CHAT FAB -->
+<button class="chat-fab" onclick="toggleChat()" title="AI Analytics Assistant">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+  </svg>
+  <div class="chat-badge">AI</div>
+</button>
+
+<!-- CHAT WINDOW -->
+<div class="chat-window hidden" id="chatWindow">
+  <div class="chat-header" id="chatHeader">
+    <div class="resize-handle n" data-dir="n"></div>
+    <div class="resize-handle s" data-dir="s"></div>
+    <div class="resize-handle e" data-dir="e"></div>
+    <div class="resize-handle w" data-dir="w"></div>
+    <div class="resize-handle ne" data-dir="ne"></div>
+    <div class="resize-handle nw" data-dir="nw"></div>
+    <div class="resize-handle se" data-dir="se"></div>
+    <div class="resize-handle sw" data-dir="sw"></div>
+    <div class="chat-avatar">🤖</div>
+    <div class="chat-header-info">
+      <div class="chat-header-name">Analytics AI <span class="provider-badge">⚡ Groq</span></div>
+      <div class="chat-header-status"><span class="status-dot"></span> Ready to analyze</div>
+    </div>
+    <div class="chat-header-actions">
+      <button class="chat-header-btn" onclick="toggleThinking()" title="Thinking panel">🧠</button>
+      <button class="chat-header-btn" onclick="changeApiKey()" title="Ganti API Key">🔑</button>
+      <button class="chat-header-btn" onclick="clearChat()" title="Clear chat">🗑️</button>
+      <button class="chat-header-btn" onclick="toggleChat()" title="Close">✕</button>
+    </div>
+  </div>
+
+  <div class="thinking-panel" id="thinkingPanel">
+    <div class="thinking-label">
+      <span class="thinking-dots"><span></span><span></span><span></span></span>
+      Thinking process
+    </div>
+    <div class="thinking-text" id="thinkingText">Waiting for a question...</div>
+  </div>
+
+  <div class="api-setup" id="apiSetup">
+    <div class="api-setup-title">🔑 Groq API Key Required</div>
+    <div class="api-setup-desc">Enter your free Groq API key. Get one at <strong>console.groq.com</strong> → API Keys</div>
+    <div class="api-input-row">
+      <input type="password" class="api-key-input" id="groqKey" placeholder="gsk_..."/>
+      <button class="api-save-btn" onclick="saveApiKey()">Connect</button>
+    </div>
+  </div>
+
+  <div class="chat-msgs" id="chatMsgs">
+    <div class="msg ai">
+      <div class="msg-avatar">🤖</div>
+      <div>
+        <div class="msg-bubble">👋 Hi! I'm your Analytics AI powered by <strong>Groq</strong>. Ask me about revenue trends, customer segments, top performers, or anything about this DVD rental data!</div>
+        <span class="msg-time">Just now</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="chip-row">
+    <button class="chip" onclick="sendChip('Who are the top customers?')">Top customers</button>
+    <button class="chip" onclick="sendChip('Explain RFM segmentation')">What is RFM?</button>
+    <button class="chip" onclick="sendChip('Which genre is most popular?')">Popular genres</button>
+    <button class="chip" onclick="sendChip('Who are at-risk customers?')">At-Risk</button>
+  </div>
+  <div class="chip-row" style="border-top:1px dashed var(--border);padding-top:0.5rem;gap:0.35rem;">
+    <span style="font-size:0.65rem;color:var(--gray);font-weight:600;align-self:center;">🎨 Theme:</span>
+    <button class="chip" onclick="sendChip('Ganti ke dark mode')">🌙 Dark</button>
+    <button class="chip" onclick="sendChip('Ganti theme ocean')">🌊 Ocean</button>
+    <button class="chip" onclick="sendChip('Ganti theme sunset')">🌅 Sunset</button>
+    <button class="chip" onclick="sendChip('Ganti theme purple')">💜 Purple</button>
+    <button class="chip" onclick="sendChip('Ganti theme pink')">🩷 Pink</button>
+    <button class="chip" onclick="sendChip('Ganti theme flowers')">🌸 Flowers</button>
+    <button class="chip" onclick="sendChip('Ganti theme rose gold')">🌹 Rose Gold</button>
+    <button class="chip" onclick="sendChip('Ganti theme mint')">🌿 Mint</button>
+    <button class="chip" onclick="sendChip('Reset ke tampilan awal')">🔄 Reset</button>
+  </div>
+  <div class="chip-row" style="border-top:1px dashed var(--border);padding-top:0.5rem;gap:0.35rem;">
+    <span style="font-size:0.65rem;color:var(--gray);font-weight:600;align-self:center;">📊 Chart:</span>
+    <button class="chip" onclick="sendChip('Ganti warna chart jadi hijau')">🟢 Hijau</button>
+    <button class="chip" onclick="sendChip('Ganti warna chart jadi biru')">🔵 Biru</button>
+    <button class="chip" onclick="sendChip('Ganti warna chart jadi orange')">🟠 Orange</button>
+    <button class="chip" onclick="sendChip('Ganti warna scatter plot jadi tosca')">💎 Tosca</button>
+  </div>
+
+  <div class="chat-input-area">
+    <textarea class="chat-input" id="chatInput" rows="1" placeholder="Ask about the data..."
+      onkeydown="handleChatKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="chat-mic" id="micBtn" onclick="toggleVoice()" title="Voice input">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+      </svg>
+    </button>
+    <button class="chat-send" id="sendBtn" onclick="sendMessage()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+  <div class="chat-resize-hint">↔ Drag corner to resize · Drag header to move</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════════════════════════
+// ── Chart colors — mutable so AI can change them at runtime ──
+let NAVY='#1E2D5A', PINK='#D4607A', SLATE='#3A4A6B';
+let SEG_COLORS={Champions:'#D4607A',Loyal:'#2E4080','At Risk':'#F0A830',Lost:'#C8D0E4'};
+let TIER_COLORS=['#C8D0E4','#7A90C0','#1E2D5A','#D4607A'];
+// Default palette snapshot (untuk reset)
+const DEFAULT_COLORS = {
+  NAVY:'#1E2D5A', PINK:'#D4607A', SLATE:'#3A4A6B',
+  SEG:{Champions:'#D4607A',Loyal:'#2E4080','At Risk':'#F0A830',Lost:'#C8D0E4'},
+  TIER:['#C8D0E4','#7A90C0','#1E2D5A','#D4607A']
+};
+const TIER_LABELS=['Low Spender','Mid Spender','High Spender','Top Spender'];
+
+// ══════════════════════════════════════════════════════════════
+// UNDO SYSTEM — simpan history state perubahan
+// ══════════════════════════════════════════════════════════════
+let undoStack = [];  // array of snapshots
+const MAX_UNDO = 20;
+
+function snapshotState(){
+  const root = document.documentElement;
+  const cssVars = ['--bg','--white','--border','--navy','--navy2','--navy3','--pink','--pink2','--slate','--gray'];
+  const css = {};
+  cssVars.forEach(v => css[v] = getComputedStyle(root).getPropertyValue(v).trim());
+  undoStack.push({
+    css,
+    NAVY, PINK, SLATE,
+    SEG_COLORS: {...SEG_COLORS},
+    TIER_COLORS: [...TIER_COLORS],
+    genreChartType: window.currentGenreChartType || 'bar',
+    monthlyChartType: window.currentMonthlyChartType || 'line',
+    chatWindowWidth: document.getElementById('chatWindow')?.style.width || '',
+    chatWindowHeight: document.getElementById('chatWindow')?.style.height || '',
+  });
+  if(undoStack.length > MAX_UNDO) undoStack.shift();
+}
+
+function undoLastChange(){
+  if(undoStack.length < 2){
+    showToast('❌ Tidak ada perubahan untuk di-undo');
+    return false;
+  }
+  undoStack.pop(); // hapus state sekarang
+  const prev = undoStack[undoStack.length - 1];
+  const root = document.documentElement;
+  Object.entries(prev.css).forEach(([k,v]) => root.style.setProperty(k, v));
+  NAVY = prev.NAVY; PINK = prev.PINK; SLATE = prev.SLATE || SLATE;
+  SEG_COLORS = {...prev.SEG_COLORS};
+  TIER_COLORS = [...prev.TIER_COLORS];
+  if(prev.genreChartType) window.currentGenreChartType = prev.genreChartType;
+  if(prev.monthlyChartType) window.currentMonthlyChartType = prev.monthlyChartType;
+  const chatWin = document.getElementById('chatWindow');
+  if(chatWin && prev.chatWindowWidth) { chatWin.style.width = prev.chatWindowWidth; chatWin.style.height = prev.chatWindowHeight; }
+  rerenderAllCharts();
+  showToast('↩️ Undo berhasil — tampilan kembali ke sebelumnya');
+  return true;
+}
+
+
+// ── Ganti port jika FastAPI kamu jalan di port lain ──
+const API_BASE = 'http://localhost:8000';
+
+const LAYOUT_BASE={
+  paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+  font:{family:'Inter, sans-serif', color:SLATE, size:11},
+  margin:{l:60, r:40, t:8, b:8},
+  xaxis:{gridcolor:'#EEF1FB', linecolor:'#E4E9F2', tickfont:{size:10}, title_font:{size:11,color:SLATE}},
+  yaxis:{gridcolor:'#EEF1FB', linecolor:'#E4E9F2', tickfont:{size:9}, title_font:{size:11,color:SLATE}}
+};
+
+// ══════════════════════════════════════════════════════════════
+// API FETCH HELPER
+// ══════════════════════════════════════════════════════════════
+async function apiFetch(path) {
+  const res = await fetch(API_BASE + path);
+  if (!res.ok) throw new Error(`API error ${res.status}: ${path}`);
+  return res.json();
+}
+
+// ══════════════════════════════════════════════════════════════
+// LIVE DATA STORE — diisi saat loadAllData()
+// ══════════════════════════════════════════════════════════════
+let RAW_MONTHLY    = [];
+let RAW_GENRE      = [];
+let RAW_GEO        = [];
+let RAW_CUSTOMERS  = [];
+let RAW_RFM        = [];
+let DUR_BINS       = {};   // { days: count }
+
+// ── Load semua data dari API sekaligus ──
+async function loadAllData() {
+  showLoadingBanner(true);
+  try {
+    const [monthly, genre, geo, customers, rfm, duration, genreMonthly, rfmByRegion] = await Promise.all([
+      apiFetch('/api/monthly'),
+      apiFetch('/api/genre'),
+      apiFetch('/api/geography'),
+      apiFetch('/api/customers'),
+      apiFetch('/api/rfm'),
+      apiFetch('/api/duration'),
+      apiFetch('/api/genre-monthly'),
+      apiFetch('/api/rfm-by-region'),
+    ]);
+
+    // Map ke format yang sama dengan variabel lama
+    RAW_MONTHLY   = monthly.map(d => ({
+      month: d.month, label: d.label,
+      revenue: parseFloat(d.revenue),
+      transactions: parseInt(d.transactions),
+      active_customers: parseInt(d.active_customers)
+    }));
+
+    RAW_GENRE     = genre.map(d => ({ genre: d.genre, count: parseInt(d.rental_count) }));
+
+    RAW_GEO       = geo.map(d => ({ country: d.country, customers: parseInt(d.customer_count) }));
+
+    RAW_CUSTOMERS = customers.map(d => ({
+      id:            d.customer_id,
+      name:          d.name,
+      email:         d.email,
+      country:       d.country,
+      active:        d.active,
+      rental_count:  parseInt(d.rental_count),
+      total_revenue: parseFloat(d.total_revenue),
+      avg_payment:   parseFloat(d.avg_payment),
+      avg_duration:  parseFloat(d.avg_duration) || 0,
+    }));
+
+    RAW_RFM       = rfm.map(d => ({
+      id:           d.customer_id,
+      name:         d.name,
+      email:        d.email,
+      recency_days: parseInt(d.recency_days),
+      frequency:    parseInt(d.frequency),
+      monetary:     parseFloat(d.monetary),
+      segment:      d.segment,
+      last_rental:  d.last_rental,
+    }));
+
+    // Flatten duration list → DUR_BINS object
+    DUR_BINS = {};
+    duration.forEach(d => { DUR_BINS[parseInt(d.duration_days)] = parseInt(d.rental_count); });
+    // Store genre-monthly for AI context
+    window.RAW_GENRE_MONTHLY = (genreMonthly||[]).map(d=>({label:d.label, genre:d.genre, rental_count:parseInt(d.rental_count)}));
+    window.RAW_RFM_BY_REGION = rfmByRegion||[];
+
+    // Update DB connection status di sidebar
+    document.querySelector('.sb-section:last-child div').innerHTML =
+      `<strong style="color:var(--slate);">dvdrental</strong> @ localhost:5432<br>
+       <span style="color:var(--green);">✅ Connected — ${RAW_CUSTOMERS.length} customers loaded</span>`;
+
+    // Populate month dropdowns setelah data ada
+    populateMonthDropdowns();
+    applyFilters(false);
+    renderKPIs();
+    restoreDashboardLayout();
+    renderTab('overview');
+    chartsRendered['overview'] = true;
+
+  } catch(err) {
+    document.querySelector('.sb-section:last-child div').innerHTML =
+      `<strong style="color:var(--slate);">dvdrental</strong> @ localhost:5432<br>
+       <span style="color:#cc3333;">❌ ${err.message}</span><br>
+       <span style="font-size:0.68rem;color:var(--gray);">Pastikan backend.py sudah jalan:<br><code>uvicorn backend:app --reload</code></span>`;
+    console.error('API load error:', err);
+  }
+  showLoadingBanner(false);
+}
+
+function showLoadingBanner(show) {
+  let el = document.getElementById('loadingBanner');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'loadingBanner';
+    el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:var(--navy);color:#fff;text-align:center;padding:0.5rem;font-size:0.8rem;font-weight:600;transition:opacity 0.3s;';
+    document.body.prepend(el);
+  }
+  if (show) { el.textContent = '⏳ Loading data from PostgreSQL...'; el.style.opacity='1'; }
+  else       { el.style.opacity='0'; setTimeout(()=>el.remove(), 400); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+let topN=10;
+let filteredCustomers=[];
+let monthFromIdx=0, monthToIdx=0;
+let chartsRendered={};
+
+// ══════════════════════════════════════════════════════════════
+// qcut-style quartile assignment (mirrors pandas qcut)
+// ══════════════════════════════════════════════════════════════
+function assignSegments(customers){
+  const sorted=[...customers].sort((a,b)=>a.total_revenue-b.total_revenue);
+  const n=sorted.length;
+  if(n===0) return customers;
+  const q=i=>sorted[Math.min(Math.floor(i/4*n), n-1)].total_revenue;
+  const q1=q(1), q2=q(2), q3=q(3);
+  return customers.map(c=>({
+    ...c,
+    spend_segment: c.total_revenue<=q1?'Low Spender':c.total_revenue<=q2?'Mid Spender':c.total_revenue<=q3?'High Spender':'Top Spender'
+  }));
+}
+
+// ══════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════
+// Populate month dropdowns after API data loaded
+function populateMonthDropdowns(){
+  const fromEl=document.getElementById('monthFrom');
+  const toEl=document.getElementById('monthTo');
+  fromEl.innerHTML='';
+  toEl.innerHTML='';
+  RAW_MONTHLY.forEach((m,i)=>{
+    fromEl.innerHTML+=`<option value="${i}">${m.label}</option>`;
+    toEl.innerHTML+=`<option value="${i}"${i===RAW_MONTHLY.length-1?' selected':''}>${m.label}</option>`;
+  });
+  monthFromIdx=0;
+  monthToIdx=RAW_MONTHLY.length-1;
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  // Groq key
+  const saved=localStorage.getItem('groq_api_key');
+  if(saved){ groqApiKey=saved; document.getElementById('apiSetup').style.display='none'; }
+  initChatDrag();
+  // Load saved theme FIRST (before data loads, so charts use correct colors)
+  loadThemeFromStorage();
+  // Take initial snapshot for undo
+  setTimeout(()=>snapshotState(), 3000);
+  // Load all data from FastAPI
+  loadAllData();
+});
+
+// ══════════════════════════════════════════════════════════════
+// FILTERS
+// ══════════════════════════════════════════════════════════════
+function applyFilters(rerender=true){
+  const activeSeg=[...document.querySelectorAll('[data-seg]')]
+    .filter(cb=>cb.checked).map(cb=>cb.dataset.seg);
+
+  const allWithSeg=assignSegments(RAW_CUSTOMERS);
+  filteredCustomers = activeSeg.length===0
+    ? allWithSeg
+    : allWithSeg.filter(c=>activeSeg.includes(c.spend_segment));
+
+  monthFromIdx=parseInt(document.getElementById('monthFrom').value)||0;
+  monthToIdx=parseInt(document.getElementById('monthTo').value)||(RAW_MONTHLY.length-1);
+
+  // Ensure from <= to
+  if(monthFromIdx>monthToIdx){
+    monthToIdx=monthFromIdx;
+    document.getElementById('monthTo').value=monthFromIdx;
+  }
+
+  if(!rerender) return;
+  // Re-render whichever tabs are already rendered
+  if(chartsRendered['overview'])  renderTab('overview');
+  if(chartsRendered['behavior'])  renderTab('behavior');
+  if(chartsRendered['loyalty'])   renderTab('loyalty');
+}
+
+function onTopNChange(val){
+  topN=parseInt(val);
+  document.getElementById('topNDisplay').textContent=val;
+  if(chartsRendered['overview']) renderTopCust();
+}
+
+// ══════════════════════════════════════════════════════════════
+// KPI ROW
+// ══════════════════════════════════════════════════════════════
+async function renderKPIs(){
+  try {
+    const data = await apiFetch('/api/kpi');
+    const d = data[0];
+    const fmt = n => parseFloat(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+    const kpis=[
+      ['Total Customers', parseInt(d.total_customers).toLocaleString(), 'active customers'],
+      ['Total Revenue', '$'+fmt(d.total_revenue), 'all transactions'],
+      ['Total Rentals', parseInt(d.total_rentals).toLocaleString(), 'all time'],
+      ['Avg Revenue Per Rental', '$'+fmt(d.avg_transaction), 'per payment'],
+      ['Avg Spend Per Customer', '$'+fmt(d.avg_spend_per_customer), 'lifetime value'],
+    ];
+    document.getElementById('kpiRow').innerHTML=kpis.map(([l,v,s])=>`
+      <div class="kpi">
+        <div class="kpi-label">${l}</div>
+        <div class="kpi-val">${v}</div>
+        <div class="kpi-sub"><span class="kpi-dot"></span>${s}</div>
+      </div>`).join('');
+    // Reorder KPI jika ada saved order
+    if (window._pendingKPIOrder) {
+      const grid = document.getElementById('kpiRow');
+      const order = window._pendingKPIOrder;
+      order.forEach(label => {
+        const card = [...grid.children].find(c => c.querySelector('.kpi-label')?.textContent?.trim() === label);
+        if (card) grid.appendChild(card);
+      });
+      window._pendingKPIOrder = null;
+    }
+  } catch(e) {
+    console.error('KPI error:', e);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════════════════
+function setTab(tab){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(!chartsRendered[tab]){
+    renderTab(tab);
+    chartsRendered[tab]=true;
+  }
+}
+
+function renderTab(tab){
+  if(tab==='overview') { renderMonthly(); renderTopCust(); renderGeo(); }
+  if(tab==='behavior') { renderGenre(); renderScatter(); renderFreq(); renderDur(); renderCumRev(); }
+  if(tab==='loyalty')  { renderSegDonut(); renderSegBar(); renderSegKPIs(); renderTierDonut(); renderTierRev(); renderLoyalRegion(); renderAtRisk(); renderInsights(); }
+  if(tab==='ml') { /* ML loads on button click */ }
+}
+
+// ══════════════════════════════════════════════════════════════
+// CHART RENDERERS
+// ══════════════════════════════════════════════════════════════
+
+/* ── Monthly Revenue & Transactions (dual axis) ── */
+function renderMonthly(){
+  const slice=RAW_MONTHLY.slice(monthFromIdx, monthToIdx+1);
+  const ct = window.currentMonthlyChartType || 'line';
+  const revTrace = ct==='bar' ? {
+    x:slice.map(d=>d.label), y:slice.map(d=>d.revenue),
+    type:'bar', name:'Revenue',
+    marker:{color:NAVY, line:{width:0}},
+    text:slice.map(d=>'$'+parseFloat(d.revenue).toFixed(0)), textposition:'outside', textfont:{size:9},
+    yaxis:'y', hovertemplate:'<b>%{x}</b><br>Revenue: $%{y:,.2f}<extra></extra>'
+  } : {
+    x:slice.map(d=>d.label), y:slice.map(d=>d.revenue),
+    mode:'lines+markers', name:'Revenue', type:'scatter',
+    line:{color:NAVY, width:3, shape:'spline'},
+    marker:{size:9, color:PINK, line:{width:2.5,color:'#fff'}},
+    fill:'tozeroy', fillcolor:'rgba(30,45,90,0.07)',
+    yaxis:'y', hovertemplate:'<b>%{x}</b><br>Revenue: $%{y:,.2f}<extra></extra>'
+  };
+  const t2={
+    x:slice.map(d=>d.label), y:slice.map(d=>d.active_customers),
+    mode:'lines+markers', name:'Active Customers', type:'scatter',
+    line:{color:PINK, width:2, dash:'dot'},
+    marker:{size:7, color:PINK},
+    yaxis:'y2', hovertemplate:'<b>%{x}</b><br>Active Customers: %{y}<extra></extra>'
+  };
+  Plotly.react('chart-monthly',[revTrace,t2],{
+    ...LAYOUT_BASE, height:320,
+    margin:{l:65,r:65,t:20,b:80},
+    xaxis:{...LAYOUT_BASE.xaxis,tickangle:-35,automargin:true},
+    yaxis:{...LAYOUT_BASE.yaxis,title:{text:'Revenue ($)',font:{size:11}},tickprefix:'$'},
+    yaxis2:{overlaying:'y',side:'right',title:{text:'Active Customers',font:{size:11}},showgrid:false,tickfont:{color:PINK,size:10}},
+    legend:{orientation:'h',yanchor:'bottom',y:1.02,xanchor:'right',x:1,font:{size:10}}
+  },{responsive:true,displayModeBar:false});
+}
+
+
+
+function renderTopCust(){
+  if(!filteredCustomers.length){
+    document.getElementById('chart-top-cust').innerHTML='<div style="padding:2rem;text-align:center;color:var(--gray);">No customers match the selected filters.</div>';
+    return;
+  }
+  const sorted=[...filteredCustomers].sort((a,b)=>b.total_revenue-a.total_revenue).slice(0,topN);
+  const asc=[...sorted].sort((a,b)=>a.total_revenue-b.total_revenue);
+  const n=asc.length;
+  const colors=asc.map((_,i)=>i===n-1?PINK:i>=n-3?'#7A90C0':NAVY);
+  const totalRev=filteredCustomers.reduce((s,c)=>s+c.total_revenue,0);
+  const topRev=sorted.reduce((s,c)=>s+c.total_revenue,0);
+  const pct=totalRev>0?(topRev/totalRev*100).toFixed(0)+'%':'—';
+  const ct=window.currentTopCustChartType||'horizontal_bar';
+  document.getElementById('top-cust-title').textContent='Top '+topN+' Customers by Spending';
+  document.getElementById('top-cust-sub').innerHTML='Top '+topN+' customers contribute <b style="color:var(--pink)">'+pct+'</b> of filtered revenue';
+  if(ct==='pie'||ct==='donut'){
+    Plotly.react('chart-top-cust',[{
+      labels:sorted.map(c=>c.name),values:sorted.map(c=>c.total_revenue),
+      type:'pie',hole:ct==='donut'?0.5:0,
+      marker:{colors:sorted.map((_,i)=>i===0?PINK:i<3?'#7A90C0':NAVY),line:{color:'#fff',width:1.5}},
+      textinfo:'label+percent',textfont:{size:9},
+      hovertemplate:'<b>%{label}</b><br>Revenue: $%{value:,.2f}<br>%{percent}<extra></extra>'
+    }],{...LAYOUT_BASE,height:Math.max(300,n*22),showlegend:true,
+      legend:{orientation:'v',yanchor:'middle',y:0.5,xanchor:'left',x:1.02,font:{size:9}}
+    },{responsive:true,displayModeBar:false});
+  } else if(ct==='vertical_bar'){
+    Plotly.react('chart-top-cust',[{
+      x:sorted.map(c=>c.name),y:sorted.map(c=>c.total_revenue),type:'bar',
+      marker:{color:colors.slice().reverse(),line:{width:0}},
+      text:sorted.map(c=>'$'+c.total_revenue.toFixed(0)),textposition:'outside',textfont:{size:9,color:SLATE},
+      hovertemplate:'<b>%{x}</b><br>Revenue: $%{y:,.2f}<extra></extra>'
+    }],{...LAYOUT_BASE,margin:{l:60,r:30,t:30,b:100},height:Math.max(280,n*28),
+      xaxis:{...LAYOUT_BASE.xaxis,tickangle:-35,automargin:true,tickfont:{size:9}},
+      yaxis:{...LAYOUT_BASE.yaxis,title:{text:'Revenue ($)',font:{size:11}},tickprefix:'$'}
+    },{responsive:true,displayModeBar:false});
+} else {
+    Plotly.react('chart-top-cust',[{
+      x:asc.map(c=>c.total_revenue),y:asc.map(c=>c.name),
+      type:'bar',orientation:'h',marker:{color:colors,line:{width:0}},
+      text:asc.map(c=>'$'+c.total_revenue.toFixed(0)),
+      textposition:'outside',textfont:{size:9,color:SLATE},
+      hovertemplate:'<b>%{y}</b><br>Revenue: $%{x:,.2f}<extra></extra>'
+    }],{...LAYOUT_BASE,
+      margin:{l:160, r:90, t:8, b:40},
+      height:420,
+      xaxis:{...LAYOUT_BASE.xaxis,
+        title:{text:'Total Revenue ($)',font:{size:11}},
+        tickformat:'$,.0f', nticks:5,
+        range:[0, Math.max(...asc.map(c=>c.total_revenue))*1.25]
+      },
+      yaxis:{...LAYOUT_BASE.yaxis,title:'',tickfont:{size:9},automargin:true}
+    },{responsive:true,displayModeBar:false});
+  }
+}
+
+/* ── Geography ── */
+function renderGeo(){
+  const ct = window.currentGeoChartType || 'horizontal_bar';
+  const top10 = RAW_GEO.slice(0,10);
+  if(ct==='pie'||ct==='donut'){
+    Plotly.react('chart-geo',[{
+      labels:top10.map(d=>d.country), values:top10.map(d=>d.customers),
+      type:'pie', hole:ct==='donut'?0.5:0,
+      marker:{colors:top10.map((_,i)=>[PINK,NAVY,'#7A90C0','#5A72A8','#2EC4A0','#F0A830','#8E54D4','#E07040','#28A8C8','#50C060'][i]||'#C8D0E4'), line:{color:'#fff',width:1.5}},
+      textinfo:'label+percent', textfont:{size:9},
+      hovertemplate:'<b>%{label}</b><br>Customers: %{value}<br>%{percent}<extra></extra>'
+    }],{
+      ...LAYOUT_BASE, height:460, showlegend:true,
+      legend:{orientation:'v',yanchor:'middle',y:0.5,xanchor:'left',x:1.02,font:{size:9}}
+    },{responsive:true,displayModeBar:false});
+  } else if(ct==='vertical_bar'){
+    Plotly.react('chart-geo',[{
+      x:RAW_GEO.map(d=>d.country), y:RAW_GEO.map(d=>d.customers),
+      type:'bar',
+      marker:{color:RAW_GEO.map(d=>d.customers), colorscale:[[0,'#EEF1FB'],[0.5,'#7A90C0'],[1,NAVY]], showscale:false, line:{width:0}},
+      text:RAW_GEO.map(d=>d.customers), textposition:'outside', textfont:{size:9},
+      hovertemplate:'<b>%{x}</b><br>Customers: %{y}<extra></extra>'
+    }],{
+      ...LAYOUT_BASE, margin:{l:50,r:30,t:30,b:110}, height:460,
+      xaxis:{...LAYOUT_BASE.xaxis,tickangle:-40,automargin:true,tickfont:{size:8}},
+      yaxis:{...LAYOUT_BASE.yaxis,title:{text:'Customers',font:{size:11}}}
+    },{responsive:true,displayModeBar:false});
+  } else {
+    Plotly.react('chart-geo',[{
+      x:RAW_GEO.map(d=>d.customers), y:RAW_GEO.map(d=>d.country),
+      type:'bar', orientation:'h',
+      marker:{color:RAW_GEO.map(d=>d.customers), colorscale:[[0,'#EEF1FB'],[0.5,'#7A90C0'],[1,NAVY]], showscale:false, line:{width:0}},
+      text:RAW_GEO.map(d=>d.customers), textposition:'outside', textfont:{size:9},
+      hovertemplate:'<b>%{y}</b><br>Customers: %{x}<extra></extra>'
+    }],{
+      ...LAYOUT_BASE, margin:{l:160,r:50,t:8,b:40}, height:400,      xaxis:{...LAYOUT_BASE.xaxis,title:{text:'Number of Customers',font:{size:11}},nticks:6,dtick:10},
+      yaxis:{...LAYOUT_BASE.yaxis,title:'',tickfont:{size:10},autorange:'reversed',automargin:true}
+    },{responsive:true,displayModeBar:false});
+  }
+}
+
+/* ── Favorite Genres ── */
+function renderGenre(){
+  if(!RAW_GENRE||!RAW_GENRE.length) return;
+  const ct = window.currentGenreChartType || 'bar';
+  // Default: colorscale navy→pink, sama seperti chart lain
+  const barColors = window.genreCustomColors
+    ? RAW_GENRE.map((_,i)=>window.genreCustomColors[i%window.genreCustomColors.length])
+    : RAW_GENRE.map(d=>d.count);
+  const defaultColorscale = [[0,'#EEF1FB'],[0.5,NAVY],[1.0,PINK]];  if(ct==='pie'||ct==='donut'){
+    Plotly.react('chart-genre',[{
+      labels:RAW_GENRE.map(d=>d.genre), values:RAW_GENRE.map(d=>d.count),
+      type:'pie', hole:ct==='donut'?0.5:0,
+      marker:{colors:window.genreCustomColors||barColors, line:{color:'#fff',width:1.5}},
+      textinfo:'label+percent', textfont:{size:10},
+      hovertemplate:'<b>%{label}</b><br>Rentals: %{value:,}<br>%{percent}<extra></extra>'
+    }],{
+      ...LAYOUT_BASE, height:390, showlegend:true,
+      legend:{orientation:'v',yanchor:'middle',y:0.5,xanchor:'left',x:1.02,font:{size:9}}
+    },{responsive:true,displayModeBar:false});
+} else if(ct==='horizontal_bar'||ct==='bar'||ct==='vertical_bar'){
+    const isVertical = ct==='vertical_bar';
+    Plotly.react('chart-genre',[{
+      x: isVertical ? RAW_GENRE.map(d=>d.genre) : RAW_GENRE.map(d=>d.count),
+      y: isVertical ? RAW_GENRE.map(d=>d.count) : RAW_GENRE.map(d=>d.genre),
+      type:'bar',
+      orientation: isVertical ? 'v' : 'h',
+      marker:{
+        color: window.genreCustomColors ? barColors : RAW_GENRE.map(d=>d.count),
+        colorscale: window.genreCustomColors ? null : defaultColorscale,
+        showscale:false, line:{width:0}
+      },
+      text:RAW_GENRE.map(d=>d.count),
+      textposition:'outside',
+      textfont:{size:9,color:'var(--slate)'},
+      hovertemplate: isVertical ? '<b>%{x}</b><br>Rentals: %{y:,}<extra></extra>' : '<b>%{y}</b><br>Rentals: %{x:,}<extra></extra>',
+    }],{
+      ...LAYOUT_BASE,
+      margin: isVertical ? {l:50,r:30,t:8,b:80} : {l:130,r:110,t:8,b:40},
+      height:390,
+      xaxis:{...LAYOUT_BASE.xaxis, title:{text: isVertical ? 'Genre' : 'Total Rentals', font:{size:11}}, tickangle: isVertical ? -35 : 0, automargin:true},
+      yaxis:{...LAYOUT_BASE.yaxis, title: isVertical ? {text:'Total Rentals',font:{size:11}} : '', tickfont:{size:10}, autorange: isVertical ? null : 'reversed', automargin:true}
+    },{responsive:true,displayModeBar:false});
+  }
+}
+
+
+function renderScatter(){
+  const segColMap={'Low Spender':'#C8D0E4','Mid Spender':'#7A90C0','High Spender':NAVY,'Top Spender':PINK};
+  const traces=TIER_LABELS.map(seg=>{
+    const pts=filteredCustomers.filter(c=>c.spend_segment===seg);
+    return {
+      x:pts.map(c=>c.rental_count), y:pts.map(c=>c.total_revenue),
+      mode:'markers', type:'scatter', name:seg,
+      marker:{color:segColMap[seg], size:pts.map(c=>Math.max(8,c.avg_duration*2)), opacity:0.80, line:{width:0.8,color:'#fff'}},
+      text:pts.map(c=>c.name),
+      hovertemplate:'<b>%{text}</b><br>Rentals: %{x}<br>Revenue: $%{y:,.2f}<extra></extra>'
+    };
+  });
+  // OLS trendline
+  if(filteredCustomers.length>1){
+    const xs=filteredCustomers.map(c=>c.rental_count);
+    const ys=filteredCustomers.map(c=>c.total_revenue);
+    const n=xs.length, sx=xs.reduce((a,b)=>a+b,0), sy=ys.reduce((a,b)=>a+b,0);
+    const sxy=xs.reduce((s,x,i)=>s+x*ys[i],0), sxx=xs.reduce((s,x)=>s+x*x,0);
+    const denom=n*sxx-sx*sx;
+    if(denom!==0){
+      const m=(n*sxy-sx*sy)/denom, b=(sy-m*sx)/n;
+      const xMin=Math.min(...xs), xMax=Math.max(...xs);
+      traces.push({x:[xMin,xMax],y:[m*xMin+b,m*xMax+b],mode:'lines',type:'scatter',
+        name:'Trend',showlegend:false,line:{color:PINK,width:2,dash:'dash'}});
+    }
+  }
+  Plotly.react('chart-scatter',traces,{
+    ...LAYOUT_BASE,
+    margin:{l:75, r:30, t:20, b:50},
+    height:400, showlegend:true,
+    legend:{title:{text:'Spending Level',font:{size:10}},orientation:'v',yanchor:'bottom',y:0.02,xanchor:'right',x:0.99,bgcolor:'rgba(255,255,255,0.9)',bordercolor:'#E4E9F2',borderwidth:1,font:{size:10}},
+    xaxis:{...LAYOUT_BASE.xaxis, title:{text:'Number of Rentals',font:{size:11}}},
+    yaxis:{...LAYOUT_BASE.yaxis, title:{text:'Total Revenue ($)',font:{size:11}}, tickprefix:'$'}
+  },{responsive:true,displayModeBar:false});
+}
+
+/* ── Rental Frequency Histogram ── */
+function renderFreq(){
+  if(!filteredCustomers.length) return;
+  const vals=filteredCustomers.map(c=>c.rental_count);
+  const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+  const ct=window.currentFreqChartType||'histogram';
+  const shapes=[{type:'line',x0:mean,x1:mean,y0:0,y1:1,yref:'paper',line:{color:PINK,width:2,dash:'dash'}}];
+  const annots=[{x:mean,y:1,yref:'paper',text:'Avg: '+mean.toFixed(1),showarrow:false,xanchor:'left',yanchor:'top',font:{size:10,color:PINK},xshift:5}];
+  const layout={...LAYOUT_BASE,margin:{l:60,r:30,t:20,b:50},height:300,shapes,annotations:annots,
+    xaxis:{...LAYOUT_BASE.xaxis,title:{text:'Number of Rentals',font:{size:11}}},
+    yaxis:{...LAYOUT_BASE.yaxis,title:{text:'Number of Customers',font:{size:11}}},bargap:0.08};
+  if(ct==='bar'){
+    // Group into buckets manually
+    const buckets={};
+    vals.forEach(v=>{const b=Math.floor(v/5)*5; buckets[b]=(buckets[b]||0)+1;});
+    const bKeys=Object.keys(buckets).map(Number).sort((a,b)=>a-b);
+    Plotly.react('chart-freq',[{x:bKeys,y:bKeys.map(k=>buckets[k]),type:'bar',
+      marker:{color:NAVY,opacity:0.85,line:{color:'#fff',width:1.2}},
+      hovertemplate:'Rentals ~%{x}<br>Customers: %{y}<extra></extra>'}],layout,{responsive:true,displayModeBar:false});
+  } else if(ct==='line'||ct==='area'){
+    const buckets={};
+    vals.forEach(v=>{const b=Math.floor(v/3)*3; buckets[b]=(buckets[b]||0)+1;});
+    const bKeys=Object.keys(buckets).map(Number).sort((a,b)=>a-b);
+    Plotly.react('chart-freq',[{x:bKeys,y:bKeys.map(k=>buckets[k]),
+      mode:'lines+markers',type:'scatter',
+      line:{color:NAVY,width:2.5,shape:'spline'},marker:{size:6,color:PINK},
+      fill:ct==='area'?'tozeroy':'none',fillcolor:'rgba(30,45,90,0.08)',
+      hovertemplate:'Rentals ~%{x}<br>Customers: %{y}<extra></extra>'}],layout,{responsive:true,displayModeBar:false});
+  } else {
+    Plotly.react('chart-freq',[{x:vals,type:'histogram',nbinsx:20,
+      marker:{color:NAVY,opacity:0.85,line:{color:'#fff',width:1.2}},
+      hovertemplate:'Rentals: %{x}<br>Customers: %{y}<extra></extra>'}],layout,{responsive:true,displayModeBar:false});
+  }
+}
+
+/* ── Duration Bar ── */
+function renderDur(){
+  const days=Object.keys(DUR_BINS).map(Number).sort((a,b)=>a-b);
+  const cnts=days.map(d=>DUR_BINS[d]);
+  const total=cnts.reduce((a,b)=>a+b,0);
+  const mean=days.reduce((s,d,i)=>s+d*cnts[i],0)/total;
+  const ct=window.currentDurChartType||'bar';
+  const shapes=[{type:'line',x0:mean,x1:mean,y0:0,y1:1,yref:'paper',line:{color:PINK,width:2,dash:'dash'}}];
+  const annots=[{x:mean,y:1,yref:'paper',text:'Avg: '+mean.toFixed(1)+'d',showarrow:false,xanchor:'left',yanchor:'top',font:{size:10,color:PINK},xshift:5}];
+  if(ct==='line'||ct==='area'){
+    Plotly.react('chart-dur',[{x:days,y:cnts,mode:'lines+markers',type:'scatter',
+      line:{color:NAVY,width:2.5,shape:'spline'},marker:{size:8,color:PINK,line:{width:2,color:'#fff'}},
+      fill:ct==='area'?'tozeroy':'none',fillcolor:'rgba(30,45,90,0.08)',
+      hovertemplate:'Duration: %{x} days<br>Rentals: %{y:,}<extra></extra>'}],{
+      ...LAYOUT_BASE,margin:{l:65,r:30,t:30,b:50},height:300,shapes,annotations:annots,
+      xaxis:{...LAYOUT_BASE.xaxis,title:{text:'Days Until Return',font:{size:11}},dtick:1},
+      yaxis:{...LAYOUT_BASE.yaxis,title:{text:'Number of Rentals',font:{size:11}}}
+    },{responsive:true,displayModeBar:false});
+  } else if(ct==='horizontal_bar'){
+    Plotly.react('chart-dur',[{x:cnts,y:days.map(d=>d+' days'),type:'bar',orientation:'h',
+      marker:{color:cnts,colorscale:[[0,'#C8D0E4'],[0.5,NAVY],[1,PINK]],showscale:false,line:{color:'#fff',width:0.8}},
+      text:cnts,textposition:'outside',textfont:{size:9},
+      hovertemplate:'Duration: %{y}<br>Rentals: %{x:,}<extra></extra>'}],{
+      ...LAYOUT_BASE,margin:{l:80,r:70,t:10,b:40},height:300,
+      xaxis:{...LAYOUT_BASE.xaxis,title:{text:'Number of Rentals',font:{size:11}}},
+      yaxis:{...LAYOUT_BASE.yaxis,title:'',tickfont:{size:10},autorange:'reversed'}
+    },{responsive:true,displayModeBar:false});
+  } else {
+    Plotly.react('chart-dur',[{x:days,y:cnts,type:'bar',
+      marker:{color:cnts,colorscale:[[0,'#C8D0E4'],[0.5,NAVY],[1,PINK]],showscale:false,line:{color:'#fff',width:0.8}},
+      text:cnts,textposition:'outside',textfont:{size:9},
+      hovertemplate:'Duration: %{x} days<br>Rentals: %{y:,}<extra></extra>'}],{
+      ...LAYOUT_BASE,margin:{l:65,r:30,t:30,b:50},height:300,shapes,annotations:annots,
+      xaxis:{...LAYOUT_BASE.xaxis,title:{text:'Days Until Return',font:{size:11}},dtick:1},
+      yaxis:{...LAYOUT_BASE.yaxis,title:{text:'Number of Rentals',font:{size:11}}},bargap:0.15
+    },{responsive:true,displayModeBar:false});
+  }
+}
+
+/* ── Cumulative Revenue Area ── */
+function renderCumRev(){
+  const slice=RAW_MONTHLY.slice(monthFromIdx, monthToIdx+1);
+  let cum=0;
+  const cumRevs=slice.map(d=>{cum+=d.revenue;return cum;});
+  Plotly.react('chart-cumrev',[{
+    x:slice.map(d=>d.label), y:cumRevs,
+    mode:'lines', fill:'tozeroy',
+    line:{color:PINK, width:2.5},
+    fillcolor:'rgba(212,96,122,0.10)',
+    hovertemplate:'<b>%{x}</b><br>Cumulative: $%{y:,.0f}<extra></extra>'
+  }],{
+    ...LAYOUT_BASE,
+    margin:{l:75, r:30, t:10, b:50},
+    height:260,
+    yaxis:{...LAYOUT_BASE.yaxis, title:{text:'Cumulative Revenue ($)',font:{size:11}}, tickprefix:'$'},
+    xaxis:{...LAYOUT_BASE.xaxis, title:''}
+  },{responsive:true,displayModeBar:false});
+}
+
+/* ── RFM Segment Donut ── */
+function renderSegDonut(){
+  const chartType=window.currentSegDonutType||'pie';
+  const counts={};
+  RAW_RFM.forEach(d=>counts[d.segment]=(counts[d.segment]||0)+1);
+  const labels=Object.keys(counts), vals=Object.values(counts);
+  if(chartType==='bar'||chartType==='horizontal_bar'){
+    Plotly.react('chart-seg-donut',[{
+      x:chartType==='horizontal_bar'?vals:labels,
+      y:chartType==='horizontal_bar'?labels:vals,
+      type:'bar', orientation:chartType==='horizontal_bar'?'h':'v',
+      marker:{color:labels.map(l=>SEG_COLORS[l]||'#C8D0E4'),line:{color:'#fff',width:1}},
+      text:vals.map(String), textposition:'outside', textfont:{size:10},
+      hovertemplate:'<b>%{x}</b><br>Customers: %{y}<extra></extra>'
+    }],{...LAYOUT_BASE,height:320,margin:{l:100,r:30,t:20,b:50},
+      xaxis:{...LAYOUT_BASE.xaxis,automargin:true},
+      yaxis:{...LAYOUT_BASE.yaxis,title:'',automargin:true}
+    },{responsive:true,displayModeBar:false});
+  } else {
+    const hole=chartType==='donut'?0.55:0;
+    Plotly.react('chart-seg-donut',[{
+      labels, values:vals, type:'pie', hole,
+      marker:{colors:labels.map(l=>SEG_COLORS[l]||'#C8D0E4'), line:{color:'#fff',width:2.5}},
+      textinfo:'label+percent', textfont:{size:11},
+      hovertemplate:'<b>%{label}</b><br>Customers: %{value}<br>%{percent}<extra></extra>'
+    }],{
+      ...LAYOUT_BASE, height:320, showlegend:true,
+      legend:{orientation:'h',yanchor:'bottom',y:-0.18,xanchor:'center',x:0.5},
+      annotations:hole>0?[{text:`<b>${RAW_RFM.length}</b><br>customers`,x:0.5,y:0.5,showarrow:false,font:{size:14,color:NAVY}}]:[]
+    },{responsive:true,displayModeBar:false});
+  }
+}
+
+/* ── Avg Spending per Segment ── */
+function renderSegBar(){
+  const ct = window.currentSegBarType || 'bar';  // ← tambah ini
+  const allSegs=['Champions','Loyal','At Risk','Lost'];
+const allAvgSpend=allSegs.map(s=>{
+  const g=RAW_RFM.filter(d=>d.segment===s);
+  return g.length?g.reduce((a,b)=>a+b.monetary,0)/g.length:0;
+});
+// Filter out segments dengan nilai 0
+const filtered = allSegs.map((s,i)=>({seg:s,val:allAvgSpend[i]})).filter(d=>d.val>0);
+const segs = filtered.map(d=>d.seg);
+const avgSpend = filtered.map(d=>d.val);
+
+  // ── Jika pie atau donut ──
+  if(ct==='pie'||ct==='donut'){
+    Plotly.react('chart-seg-bar',[{
+      labels:segs, values:avgSpend, type:'pie', hole:ct==='donut'?0.5:0,
+      marker:{colors:segs.map(s=>SEG_COLORS[s]||'#C8D0E4'), line:{color:'#fff',width:2}},
+      text:avgSpend.map(v=>`$${v.toFixed(2)}`),
+      textinfo:'label+percent', textfont:{size:11},
+      hovertemplate:'<b>%{label}</b><br>Avg: $%{value:,.2f}<extra></extra>'
+    }],{
+      ...LAYOUT_BASE, height:320, showlegend:true,
+      legend:{orientation:'h',yanchor:'bottom',y:-0.18,xanchor:'center',x:0.5}
+    },{responsive:true,displayModeBar:false});
+
+  // ── Jika horizontal bar ──
+  } else if(ct==='horizontal_bar'){
+    Plotly.react('chart-seg-bar',[{
+      x:avgSpend, y:segs, type:'bar', orientation:'h',
+      marker:{color:segs.map(s=>SEG_COLORS[s]||'#C8D0E4'), line:{color:'#fff',width:1}},
+      text:avgSpend.map(v=>`$${v.toFixed(2)}`), textposition:'outside', textfont:{size:10,color:SLATE},
+      hovertemplate:'<b>%{y}</b><br>Avg: $%{x:,.2f}<extra></extra>'
+    }],{
+      ...LAYOUT_BASE, height:320,
+      margin:{l:100,r:80,t:20,b:40},
+      xaxis:{...LAYOUT_BASE.xaxis, title:{text:'Avg Spending ($)',font:{size:11}}, tickprefix:'$', automargin:true},
+      yaxis:{...LAYOUT_BASE.yaxis, title:'', automargin:true}
+    },{responsive:true,displayModeBar:false});
+
+  // ── Default: vertical bar ──
+  } else {
+    Plotly.react('chart-seg-bar',[{
+      x:segs, y:avgSpend, type:'bar',
+      marker:{color:segs.map(s=>SEG_COLORS[s]||'#C8D0E4'), line:{color:'#fff',width:1}},
+      text:avgSpend.map(v=>`$${v.toFixed(2)}`), textposition:'outside', textfont:{size:10,color:SLATE},
+      hovertemplate:'<b>%{x}</b><br>Avg Spending: $%{y:,.2f}<extra></extra>'
+    }],{
+      ...LAYOUT_BASE,
+      margin:{l:75, r:30, t:30, b:50},
+      height:320,
+      yaxis:{...LAYOUT_BASE.yaxis, title:{text:'Avg Spending ($)',font:{size:11}}, tickprefix:'$'},
+      xaxis:{...LAYOUT_BASE.xaxis, title:{text:'Customer Segment',font:{size:11}}},
+      bargap:0.35
+    },{responsive:true,displayModeBar:false});
+  }
+}
+
+/* ── Segment KPI badges ── */
+function renderSegKPIs(){
+  const badges=[['Champions','🏆'],['Loyal','💙'],['Lost','🚀']];
+  document.getElementById('seg-kpi-row').innerHTML=badges.map(([seg,icon])=>{
+    const cnt=RAW_RFM.filter(d=>d.segment===seg).length;
+    return `<div class="kpi">
+      <div class="kpi-label">${icon} ${seg.toUpperCase()}</div>
+      <div class="kpi-val">${cnt}</div>
+      <div class="kpi-sub"><span class="kpi-dot"></span>customers</div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Spending Tier Donut ── */
+function renderTierDonut(){
+  const chartType=window.currentTierDonutType||'donut';
+  const allSeg=assignSegments(RAW_CUSTOMERS);
+  const cnts=TIER_LABELS.map(t=>allSeg.filter(c=>c.spend_segment===t).length);
+  if(chartType==='bar'||chartType==='horizontal_bar'){
+    Plotly.react('chart-tier-donut',[{
+      x:chartType==='horizontal_bar'?cnts:TIER_LABELS,
+      y:chartType==='horizontal_bar'?TIER_LABELS:cnts,
+      type:'bar', orientation:chartType==='horizontal_bar'?'h':'v',
+      marker:{color:TIER_COLORS,line:{color:'#fff',width:1}},
+      text:cnts.map(String), textposition:'outside', textfont:{size:10},
+      hovertemplate:'<b>%{y}</b><br>Customers: %{x}<extra></extra>'
+    }],{...LAYOUT_BASE,height:300,margin:{l:100,r:30,t:20,b:50},
+      xaxis:{...LAYOUT_BASE.xaxis,automargin:true},
+      yaxis:{...LAYOUT_BASE.yaxis,title:'',automargin:true}
+    },{responsive:true,displayModeBar:false});
+  } else {
+    const hole=chartType==='pie'?0:0.55;
+    Plotly.react('chart-tier-donut',[{
+      labels:TIER_LABELS, values:cnts, type:'pie', hole,
+      marker:{colors:TIER_COLORS, line:{color:'#fff',width:2.5}},
+      textinfo:'label+percent', textfont:{size:11},
+      hovertemplate:'<b>%{label}</b><br>Customers: %{value}<br>%{percent}<extra></extra>'
+    }],{
+      ...LAYOUT_BASE, height:300, showlegend:true,
+      legend:{orientation:'h',yanchor:'bottom',y:-0.18,xanchor:'center',x:0.5},
+      annotations:hole>0?[{text:`<b>${RAW_CUSTOMERS.length}</b><br>customers`,x:0.5,y:0.5,showarrow:false,font:{size:14,color:NAVY}}]:[]
+    },{responsive:true,displayModeBar:false});
+  }
+}
+
+/* ── Revenue by Spending Tier ── */
+function renderTierRev(){
+  const ct = window.currentTierRevType || 'bar';  // ← tambah ini
+  const allSeg=assignSegments(RAW_CUSTOMERS);
+  const revs=TIER_LABELS.map(t=>allSeg.filter(c=>c.spend_segment===t).reduce((s,c)=>s+c.total_revenue,0));
+  const total=revs.reduce((a,b)=>a+b,0);
+  const pcts=revs.map(r=>total>0?(r/total*100).toFixed(1):0);
+
+  // ── Pie atau donut ──
+  if(ct==='pie'||ct==='donut'){
+    Plotly.react('chart-tier-rev',[{
+      labels:TIER_LABELS, values:revs, type:'pie', hole:ct==='donut'?0.5:0,
+      marker:{colors:TIER_COLORS, line:{color:'#fff',width:2}},
+      text:revs.map((v,i)=>`$${(v/1000).toFixed(1)}k (${pcts[i]}%)`),
+      textinfo:'label+percent', textfont:{size:11},
+      hovertemplate:'<b>%{label}</b><br>Revenue: $%{value:,.0f}<br>%{percent}<extra></extra>'
+    }],{
+      ...LAYOUT_BASE, height:300, showlegend:true,
+      legend:{orientation:'h',yanchor:'bottom',y:-0.18,xanchor:'center',x:0.5}
+    },{responsive:true,displayModeBar:false});
+
+  // ── Horizontal bar ──
+  } else if(ct==='horizontal_bar'){
+    Plotly.react('chart-tier-rev',[{
+      x:revs, y:TIER_LABELS, type:'bar', orientation:'h',
+      marker:{color:TIER_COLORS, line:{color:'#fff',width:1}},
+      text:revs.map((v,i)=>`$${v.toFixed(0)} (${pcts[i]}%)`), textposition:'outside', textfont:{size:9,color:SLATE},
+      cliponaxis:false,
+      hovertemplate:'<b>%{y}</b><br>Revenue: $%{x:,.2f}<extra></extra>'
+    }],{
+      ...LAYOUT_BASE,
+      margin:{l:110,r:120,t:20,b:40},
+      height:300,
+      xaxis:{...LAYOUT_BASE.xaxis, title:{text:'Total Revenue ($)',font:{size:11}}, tickprefix:'$', automargin:true},
+      yaxis:{...LAYOUT_BASE.yaxis, title:'', automargin:true}
+    },{responsive:true,displayModeBar:false});
+
+  // ── Default: vertical bar ──
+  } else {
+    Plotly.react('chart-tier-rev',[{
+      x:TIER_LABELS, y:revs, type:'bar',
+      marker:{color:TIER_COLORS, line:{color:'#fff',width:1}},
+      text:revs.map((v,i)=>`$${v.toFixed(0)} (${pcts[i]}%)`),
+      textposition:'outside', textfont:{size:9,color:SLATE},
+      hovertemplate:'<b>%{x}</b><br>Revenue: $%{y:,.2f}<extra></extra>'
+    }],{
+      ...LAYOUT_BASE,
+      margin:{l:75, r:30, t:30, b:50},
+      height:300,
+      yaxis:{...LAYOUT_BASE.yaxis, title:{text:'Total Revenue ($)',font:{size:11}}, tickprefix:'$'},
+      xaxis:{...LAYOUT_BASE.xaxis, title:{text:'Spending Tier',font:{size:11}}},
+      bargap:0.35
+    },{responsive:true,displayModeBar:false});
+  }
+}
+
+/* ── At-Risk Customers ── */
+function renderAtRisk(){
+  const atRisk=RAW_RFM.filter(d=>d.recency_days>=90).sort((a,b)=>b.recency_days-a.recency_days);
+  const el=document.getElementById('atrisk-section');
+  if(!atRisk.length){
+    el.innerHTML='<div class="success-box">✅ No at-risk customers found!</div>';
+    return;
+  }
+  el.innerHTML=`
+    <div class="warning-box">⚠️ ${atRisk.length} customers haven't rented in 90+ days.</div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead><tr>
+          <th>Customer</th><th>Last Rental</th>
+          <th>Total Rentals</th><th>Total Spent ($)</th><th>Days Inactive</th>
+        </tr></thead>
+        <tbody>${atRisk.map(c=>`
+          <tr>
+            <td><strong>${c.name}</strong></td>
+            <td>${c.last_rental}</td>
+            <td>${c.frequency}</td>
+            <td>$${c.monetary.toFixed(2)}</td>
+            <td><span class="seg-badge" style="background:rgba(240,168,48,0.12);color:#7A5A00;">${c.recency_days}d</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* ── Key Insights ── */
+function renderInsights(){
+  if(!filteredCustomers.length) return;
+  const rev=filteredCustomers.map(c=>c.total_revenue);
+  const cnt=filteredCustomers.map(c=>c.rental_count);
+  const totalRev=rev.reduce((a,b)=>a+b,0);
+  const topK=Math.max(1,Math.floor(filteredCustomers.length*0.2));
+  const top20Rev=[...rev].sort((a,b)=>b-a).slice(0,topK).reduce((a,b)=>a+b,0);
+  const top20pct=totalRev>0?(top20Rev/totalRev*100).toFixed(0):0;
+  // Pearson
+  const n=rev.length, mx=cnt.reduce((a,b)=>a+b,0)/n, my=rev.reduce((a,b)=>a+b,0)/n;
+  const num=cnt.reduce((s,x,i)=>s+(x-mx)*(rev[i]-my),0);
+  const den=Math.sqrt(cnt.reduce((s,x)=>s+(x-mx)**2,0)*rev.reduce((s,y)=>s+(y-my)**2,0));
+  const corr=den!==0?(num/den).toFixed(2):'—';
+  // Duration avg
+  const durTotal=Object.entries(DUR_BINS).reduce((s,[d,c])=>s+Number(d)*c,0);
+  const durCount=Object.values(DUR_BINS).reduce((a,b)=>a+b,0);
+  const avgDur=(durTotal/durCount).toFixed(1);
+
+  document.getElementById('insight-row').innerHTML=`
+    <div class="insight-card">
+      <h4>Revenue Concentration</h4>
+      <span class="insight-num">${top20pct}%</span>
+      <p>of total revenue comes from the top 20% of customers — a small group of high-value customers drives most of the business.</p>
+    </div>
+    <div class="insight-card">
+      <h4>Frequency Drives Revenue</h4>
+      <span class="insight-num">r = ${corr}</span>
+      <p>correlation between rental frequency and revenue. The more a customer rents, the more they spend — confirmed by the scatter trendline.</p>
+    </div>
+    <div class="insight-card">
+      <h4>Return Behavior</h4>
+      <span class="insight-num">5 days</span>
+      <p>is the most common rental duration. Average is ${avgDur} days. Fast returns support steady transaction flow and consistent revenue.</p>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// CUSTOMER DETAIL TAB
+// ══════════════════════════════════════════════════════════════
+// ── Customer search state ──
+let custSearchResults = [];  // [{customer_id, name, email, country, active}]
+let searchDebounceTimer = null;
+
+async function searchCustomer(val){
+  const sel=document.getElementById('custSelect');
+  const wrap=document.getElementById('cust-select-wrap');
+  const empty=document.getElementById('cust-empty');
+  const profile=document.getElementById('cust-profile');
+
+  if(!val){
+    wrap.style.display='none'; profile.innerHTML='';
+    empty.style.display='block'; empty.innerHTML='👆 Type a customer name above to see their profile.';
+    return;
+  }
+
+  // Debounce — tunggu 400ms baru fetch
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(async ()=>{
+    try {
+      empty.innerHTML='🔍 Searching...';
+      empty.style.display='block';
+      const results = await apiFetch('/api/customer/search?q='+encodeURIComponent(val));
+      custSearchResults = results;
+
+      if(!results.length){
+        wrap.style.display='none'; profile.innerHTML='';
+        empty.style.display='block';
+        empty.innerHTML=`No customer found matching "<strong>${val}</strong>".`;
+        return;
+      }
+      sel.innerHTML = results.map(r=>`<option value="${r.customer_id}">${r.name}</option>`).join('');
+      wrap.style.display='block'; empty.style.display='none';
+      loadCustDetail();
+    } catch(e) {
+      empty.innerHTML = '❌ Search error: '+e.message;
+    }
+  }, 400);
+}
+
+async function loadCustDetail(){
+  const sel = document.getElementById('custSelect');
+  const custId = sel.value;
+  const custName = sel.options[sel.selectedIndex]?.text || '';
+  const profile = document.getElementById('cust-profile');
+
+  // Find selected customer info from search results
+  const custInfo = custSearchResults.find(r=>String(r.customer_id)===String(custId)) || {};
+
+  profile.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--gray);">⏳ Loading customer data...</div>';
+
+  try {
+    const data = await apiFetch('/api/customer/'+custId);
+    const kpi = data.kpi;
+    const timeline = data.timeline;
+    const genres = data.genres;
+    const history = data.history;
+
+    const fmt2 = v => parseFloat(v||0).toFixed(2);
+
+    const kpiData=[
+      ['Total Rentals', parseInt(kpi.total_rentals||0).toLocaleString(), 'rentals'],
+      ['Total Spent', '$'+fmt2(kpi.total_spent), 'lifetime'],
+      ['Avg Transaction', '$'+fmt2(kpi.avg_transaction), 'per payment'],
+      ['First Rental', kpi.first_rental||'—', 'joined'],
+      ['Last Rental', kpi.last_rental||'—', 'most recent'],
+    ];
+
+    profile.innerHTML=`
+      <div class="cust-profile-card">
+        <div class="cust-profile-avatar">👤</div>
+        <div>
+          <div class="cust-profile-name">${custName}</div>
+          <div class="cust-profile-sub">📧 ${custInfo.email||''} &nbsp;|&nbsp; 🌍 ${custInfo.country||''} &nbsp;|&nbsp; ${custInfo.active?'🟢 Active':'🔴 Inactive'}</div>
+        </div>
+      </div>
+      <div class="kpi-grid kpi-grid-5" style="margin-bottom:1rem;">
+        ${kpiData.map(([l,v,s])=>`<div class="kpi"><div class="kpi-label">${l}</div><div class="kpi-val">${v}</div><div class="kpi-sub"><span class="kpi-dot"></span>${s}</div></div>`).join('')}
+      </div>
+      <div class="grid-2">
+        <div class="chart-wrap">
+          <div class="chart-title">Rental Activity Over Time</div>
+          <div class="chart-sub">How active has this customer been?</div>
+          <div id="chart-cust-timeline" style="height:240px;"></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-title">Favorite Genres</div>
+          <div class="chart-sub">What does this customer love to watch?</div>
+          <div id="chart-cust-genre" style="height:240px;"></div>
+        </div>
+      </div>
+      <div class="sec-label">Rental History</div>
+      <div class="expander">
+        <button class="expander-header" onclick="toggleExpander(this)">
+          View Full Rental History (${history.length} records) <span class="expander-arrow">▼</span>
+        </button>
+        <div class="expander-body">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Rental Date</th><th>Return Date</th><th>Film</th><th>Genre</th><th>Paid ($)</th></tr></thead>
+              <tbody>
+                ${history.map(h=>`<tr>
+                  <td>${h.rental_date||'—'}</td>
+                  <td>${h.return_date||'—'}</td>
+                  <td>${h.film_title||'—'}</td>
+                  <td>${h.genre||'—'}</td>
+                  <td>$${parseFloat(h.paid||0).toFixed(2)}</td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
+
+    // Render charts
+    setTimeout(()=>{
+      Plotly.newPlot('chart-cust-timeline',[{
+        x: timeline.map(t=>t.month),
+        y: timeline.map(t=>parseInt(t.rental_count)),
+        mode:'lines+markers', type:'scatter',
+        line:{color:NAVY,width:2.5}, marker:{size:8,color:PINK,line:{width:2,color:'#fff'}},
+        fill:'tozeroy', fillcolor:'rgba(30,45,90,0.07)',
+        hovertemplate:'<b>%{x}</b><br>Rentals: %{y}<extra></extra>'
+      }],{
+        ...LAYOUT_BASE,
+        margin:{l:55, r:20, t:10, b:50},
+        height:220,
+        xaxis:{...LAYOUT_BASE.xaxis,title:{text:'Month',font:{size:11}}},
+        yaxis:{...LAYOUT_BASE.yaxis,title:{text:'Rentals',font:{size:11}}}
+      },{responsive:true,displayModeBar:false});
+
+      const gCounts = genres.map(g=>parseInt(g.rental_count));
+      const gNames  = genres.map(g=>g.genre);
+      Plotly.newPlot('chart-cust-genre',[{
+        x:gCounts, y:gNames, type:'bar', orientation:'h',
+        marker:{color:gCounts, colorscale:[[0,'#EEF1FB'],[0.5,NAVY],[1,PINK]], showscale:false},
+        hovertemplate:'<b>%{y}</b><br>Rentals: %{x}<extra></extra>'
+      }],{
+        ...LAYOUT_BASE,
+        margin:{l:120, r:50, t:10, b:40},
+        height:220,
+        xaxis:{...LAYOUT_BASE.xaxis,title:{text:'Rentals',font:{size:11}}},
+        yaxis:{...LAYOUT_BASE.yaxis,title:'',tickfont:{size:10},autorange:'reversed',automargin:true}
+      },{responsive:true,displayModeBar:false});
+    },80);
+
+  } catch(e) {
+    profile.innerHTML = `<div class="warning-box">❌ Error loading customer: ${e.message}</div>`;
+  }
+}
+
+function toggleExpander(btn){
+  const body=btn.nextElementSibling;
+  const arrow=btn.querySelector('.expander-arrow');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+// ══════════════════════════════════════════════════════════════
+// AI CHATBOT — GROQ
+// ══════════════════════════════════════════════════════════════
+let chatOpen=false, thinkingOpen=false;
+let chatHistory=[], groqApiKey='';
+
+function toggleChat(){
+  chatOpen=!chatOpen;
+  document.getElementById('chatWindow').classList.toggle('hidden',!chatOpen);
+  if(chatOpen) setTimeout(()=>document.getElementById('chatInput').focus(),300);
+}
+function toggleThinking(){
+  thinkingOpen=!thinkingOpen;
+  document.getElementById('thinkingPanel').classList.toggle('open',thinkingOpen);
+}
+function clearChat(){
+  chatHistory=[];
+  document.getElementById('chatMsgs').innerHTML=`
+    <div class="msg ai"><div class="msg-avatar">🤖</div><div>
+      <div class="msg-bubble">Chat cleared! Ask me anything about the DVD rental data.</div>
+      <span class="msg-time">${getTime()}</span>
+    </div></div>`;
+}
+function changeApiKey(){
+  const current = localStorage.getItem('groq_api_key')||'';
+  const masked = current ? current.slice(0,8)+'••••••••••••••••' : '(belum diset)';
+  const ok = confirm('API Key sekarang: '+masked+'\n\nKlik OK untuk hapus dan ganti API Key baru.');
+  if(ok){
+    groqApiKey='';
+    localStorage.removeItem('groq_api_key');
+    document.getElementById('groqKey').value='';
+    document.getElementById('apiSetup').style.display='block';
+    addAiMsg('🔑 API Key dihapus. Silakan masukkan API Key baru di atas.');
+  }
+}
+function saveApiKey(){
+  const key=document.getElementById('groqKey').value.trim();
+  if(!key.startsWith('gsk_')){alert('Please enter a valid Groq API key (starts with gsk_)');return;}
+  groqApiKey=key;
+  localStorage.setItem('groq_api_key',key);
+  document.getElementById('apiSetup').style.display='none';
+  addAiMsg('✅ Connected to Groq! I\'m ready to analyze your DVD rental data. Ask me anything!');
+}
+function sendChip(text){document.getElementById('chatInput').value=text;sendMessage();}
+function handleChatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
+function getTime(){return new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});}
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function md(t){
+  return t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/`(.*?)`/g,'<code style="background:#EEF1FB;padding:1px 5px;border-radius:3px;font-size:0.85em;">$1</code>')
+    .replace(/\n/g,'<br/>');
+}
+
+function addUserMsg(text){
+  const msgs=document.getElementById('chatMsgs');
+  msgs.innerHTML+=`<div class="msg user"><div class="msg-avatar">👤</div><div><div class="msg-bubble">${esc(text)}</div><span class="msg-time">${getTime()}</span></div></div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+}
+function addTyping(){
+  const msgs=document.getElementById('chatMsgs');
+  const id='t'+Date.now();
+  msgs.innerHTML+=`<div class="msg ai" id="${id}"><div class="msg-avatar">🤖</div><div><div class="msg-bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div></div></div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+  return id;
+}
+function addAiMsg(text){
+  // Parse & execute ACTION tag sebelum render teks
+  const actionMatch = text.match(/<ACTION>([\s\S]*?)<\/ACTION>/);
+  if(actionMatch){
+    try{ executeDashboardAction(JSON.parse(actionMatch[1].trim())); }
+    catch(e){ console.warn('Bad action JSON:', e); }
+    text = text.replace(/<ACTION>[\s\S]*?<\/ACTION>/, '').trim();
+  }
+  const msgs=document.getElementById('chatMsgs');
+  msgs.innerHTML+=`<div class="msg ai"><div class="msg-avatar">🤖</div><div><div class="msg-bubble">${md(text)}</div><span class="msg-time">${getTime()}</span></div></div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+  // Bacain jawaban kalau user pakai voice input
+  if (window._lastInputWasVoice) { speakResponse(text); window._lastInputWasVoice = false; }
+}
+
+// ════════════════════════════════════════════════════════
+// DASHBOARD + CHART ACTION EXECUTOR
+// ════════════════════════════════════════════════════════
+function rerenderAllCharts(){
+  // Re-render semua tab yang sudah pernah dirender
+  Object.keys(chartsRendered).forEach(tab => {
+    if(chartsRendered[tab]) renderTab(tab);
+  });
+}
+
+function executeDashboardAction(action){
+  const root = document.documentElement;
+
+  // ── Helper: navigate to tab after action ──
+  function maybeNavigate(tab){
+    if(tab) { setTimeout(()=>setTab(tab), 80); }
+  }
+
+  // ── Ubah satu CSS var ──
+  if(action.type === 'change_color'){
+    snapshotState();
+    if(action.var && action.value){
+      root.style.setProperty(action.var, action.value);
+      if(action.var==='--pink'){ PINK=action.value; SEG_COLORS.Champions=action.value; TIER_COLORS[3]=action.value; rerenderAllCharts(); }
+      if(action.var==='--navy'){ NAVY=action.value; SEG_COLORS.Loyal=action.value; TIER_COLORS[2]=action.value; rerenderAllCharts(); }
+      saveThemeToStorage();
+      showToast('🎨 '+action.var+' diubah!');
+    }
+    maybeNavigate(action.navigateTo);
+  }
+
+  // ── Ubah SELURUH dashboard ──
+  if(action.type === 'change_whole_theme'){
+    snapshotState();
+    const map={'--bg':action.bg,'--white':action.white,'--border':action.border,
+      '--navy':action.navy,'--navy2':action.navy2,'--navy3':action.navy3,
+      '--pink':action.pink,'--pink2':action.pink2,'--slate':action.slate,'--gray':action.gray};
+    Object.entries(map).forEach(([k,v])=>{ if(v) root.style.setProperty(k,v); });
+    if(action.chartNavy){ NAVY=action.chartNavy; SEG_COLORS.Loyal=action.chartNavy; TIER_COLORS[2]=action.chartNavy; }
+    if(action.chartPink){ PINK=action.chartPink; SEG_COLORS.Champions=action.chartPink; TIER_COLORS[3]=action.chartPink; }
+    rerenderAllCharts();
+    saveThemeToStorage();
+    showToast('🎨 Whole dashboard diubah!');
+    maybeNavigate(action.navigateTo);
+  }
+
+  // ── Preset themes ──
+  if(action.type === 'change_theme'){
+    snapshotState();
+    const themes={
+      dark:{css:{'--bg':'#0F1117','--white':'#1A1D2E','--border':'#2A2D3E','--navy':'#4A6FD4','--navy2':'#5A7FE4','--navy3':'#6A8FF4','--pink':'#FF6B9D','--pink2':'#FF6B9D40','--slate':'#C8D0E4','--gray':'#8A97B5'},chart:{N:'#4A6FD4',P:'#FF6B9D',S:{Champions:'#FF6B9D',Loyal:'#4A6FD4','At Risk':'#F0A830',Lost:'#4A4A6A'},T:['#2A2D3E','#3A4A7A','#4A6FD4','#FF6B9D']}},
+      ocean:{css:{'--bg':'#EBF4FF','--white':'#F5FAFF','--border':'#B3D9F7','--navy':'#0A3D6B','--navy2':'#0D4D85','--navy3':'#105D9F','--pink':'#0099CC','--pink2':'#0099CC40','--slate':'#1A3A5C','--gray':'#5A7A9A'},chart:{N:'#0A3D6B',P:'#0099CC',S:{Champions:'#0099CC',Loyal:'#0A3D6B','At Risk':'#F0A830',Lost:'#B3D9F7'},T:['#B3D9F7','#5A9ACC','#0A3D6B','#0099CC']}},
+      sunset:{css:{'--bg':'#FFF8F3','--white':'#FFFCFA','--border':'#FFD4B8','--navy':'#7A2E00','--navy2':'#9A3A00','--navy3':'#BA4600','--pink':'#FF6B35','--pink2':'#FF6B3540','--slate':'#5A2A10','--gray':'#A07050'},chart:{N:'#7A2E00',P:'#FF6B35',S:{Champions:'#FF6B35',Loyal:'#7A2E00','At Risk':'#F0A830',Lost:'#FFD4B8'},T:['#FFD4B8','#FFAA70','#7A2E00','#FF6B35']}},
+      purple:{css:{'--bg':'#F5F0FF','--white':'#FAF8FF','--border':'#D4B8FF','--navy':'#3D1A7A','--navy2':'#4D2A8A','--navy3':'#5D3A9A','--pink':'#8B5CF6','--pink2':'#8B5CF640','--slate':'#2D1A5A','--gray':'#7A60A0'},chart:{N:'#3D1A7A',P:'#8B5CF6',S:{Champions:'#8B5CF6',Loyal:'#3D1A7A','At Risk':'#F0A830',Lost:'#D4B8FF'},T:['#D4B8FF','#9A70E0','#3D1A7A','#8B5CF6']}},
+      light:{css:{'--bg':'#F4F6FB','--white':'#FFFFFF','--border':'#E4E9F2','--navy':'#1E2D5A','--navy2':'#26386E','--navy3':'#2E4080','--pink':'#D4607A','--pink2':'#F0AEC0','--slate':'#3A4A6B','--gray':'#8A97B5'},chart:{N:'#1E2D5A',P:'#D4607A',S:{Champions:'#D4607A',Loyal:'#2E4080','At Risk':'#F0A830',Lost:'#C8D0E4'},T:['#C8D0E4','#7A90C0','#1E2D5A','#D4607A']}},
+      pink_pastel:{css:{'--bg':'#FFF0F6','--white':'#FFF8FB','--border':'#FBCFE8','--navy':'#BE185D','--navy2':'#DB2777','--navy3':'#EC4899','--pink':'#F43F5E','--pink2':'#FBCFE8','--slate':'#831843','--gray':'#DB7093'},chart:{N:'#BE185D',P:'#F43F5E',S:{Champions:'#F43F5E',Loyal:'#BE185D','At Risk':'#FB923C',Lost:'#FBCFE8'},T:['#FBCFE8','#F9A8D4','#BE185D','#F43F5E']}},
+      mint:{css:{'--bg':'#F0FDF4','--white':'#F7FFF9','--border':'#BBF7D0','--navy':'#065F46','--navy2':'#047857','--navy3':'#059669','--pink':'#10B981','--pink2':'#BBF7D0','--slate':'#064E3B','--gray':'#6EE7B7'},chart:{N:'#065F46',P:'#10B981',S:{Champions:'#10B981',Loyal:'#065F46','At Risk':'#F59E0B',Lost:'#BBF7D0'},T:['#BBF7D0','#6EE7B7','#065F46','#10B981']}},
+      lavender:{css:{'--bg':'#F5F3FF','--white':'#FAFAFE','--border':'#DDD6FE','--navy':'#4C1D95','--navy2':'#5B21B6','--navy3':'#6D28D9','--pink':'#A78BFA','--pink2':'#DDD6FE','--slate':'#3B0764','--gray':'#C4B5FD'},chart:{N:'#4C1D95',P:'#A78BFA',S:{Champions:'#A78BFA',Loyal:'#4C1D95','At Risk':'#FCD34D',Lost:'#DDD6FE'},T:['#DDD6FE','#C4B5FD','#4C1D95','#A78BFA']}},
+      rose_gold:{css:{'--bg':'#FFF5F0','--white':'#FFFAF8','--border':'#FECACA','--navy':'#9F1239','--navy2':'#BE123C','--navy3':'#E11D48','--pink':'#FB7185','--pink2':'#FECDD3','--slate':'#881337','--gray':'#FDA4AF'},chart:{N:'#9F1239',P:'#FB7185',S:{Champions:'#FB7185',Loyal:'#9F1239','At Risk':'#FBBF24',Lost:'#FECDD3'},T:['#FECDD3','#FDA4AF','#9F1239','#FB7185']}},
+      flowers:{css:{'--bg':'#FFF0F6','--white':'#FFF8FB','--border':'#FBCFE8','--navy':'#BE185D','--navy2':'#DB2777','--navy3':'#EC4899','--pink':'#F43F5E','--pink2':'#FBCFE8','--slate':'#831843','--gray':'#DB7093'},chart:{N:'#BE185D',P:'#F43F5E',S:{Champions:'#F43F5E',Loyal:'#BE185D','At Risk':'#FB923C',Lost:'#FBCFE8'},T:['#FBCFE8','#F9A8D4','#BE185D','#F43F5E']},pattern:'cherry_blossom'}
+    };
+    const t=themes[action.preset];
+    if(t){
+      Object.entries(t.css).forEach(([k,v])=>root.style.setProperty(k,v));
+      NAVY=t.chart.N; PINK=t.chart.P;
+      SEG_COLORS={...t.chart.S}; TIER_COLORS=[...t.chart.T];
+      if(t.pattern){
+        const patterns={cherry_blossom:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cellipse cx='40' cy='22' rx='5' ry='9' fill='%23FBCFE830' transform='rotate(0,40,40)'/%3E%3Cellipse cx='40' cy='22' rx='5' ry='9' fill='%23FDE8EF30' transform='rotate(72,40,40)'/%3E%3Cellipse cx='40' cy='22' rx='5' ry='9' fill='%23FBCFE830' transform='rotate(144,40,40)'/%3E%3Cellipse cx='40' cy='22' rx='5' ry='9' fill='%23FDE8EF30' transform='rotate(216,40,40)'/%3E%3Cellipse cx='40' cy='22' rx='5' ry='9' fill='%23FBCFE830' transform='rotate(288,40,40)'/%3E%3C/svg%3E\")"};
+        document.body.style.backgroundImage=patterns[t.pattern]||'';
+      } else {
+        document.body.style.backgroundImage='';
+      }
+      rerenderAllCharts();
+      saveThemeToStorage();
+      showToast('🌸 Theme "'+action.preset+'" aktif!');
+    } else {
+      showToast('Tersedia: dark, ocean, sunset, purple, light, pink_pastel, mint, lavender, rose_gold, flowers');
+    }
+    maybeNavigate(action.navigateTo);
+  }
+
+  // ── Ubah warna chart spesifik ──
+  if(action.type === 'change_chart_color'){
+    snapshotState();
+    const v=action.value;
+    const m={'accent':(v)=>{PINK=v;SEG_COLORS.Champions=v;TIER_COLORS[3]=v;root.style.setProperty('--pink',v);},'primary':(v)=>{NAVY=v;SEG_COLORS.Loyal=v;TIER_COLORS[2]=v;root.style.setProperty('--navy',v);},'all_bars':(v)=>{PINK=v;NAVY=v;root.style.setProperty('--pink',v);root.style.setProperty('--navy',v);},'seg_champions':(v)=>SEG_COLORS.Champions=v,'seg_loyal':(v)=>SEG_COLORS.Loyal=v,'seg_atrisk':(v)=>SEG_COLORS['At Risk']=v,'seg_lost':(v)=>SEG_COLORS.Lost=v,'tier_low':(v)=>TIER_COLORS[0]=v,'tier_mid':(v)=>TIER_COLORS[1]=v,'tier_high':(v)=>TIER_COLORS[2]=v,'tier_top':(v)=>TIER_COLORS[3]=v,'genre_all':(v)=>{window.genreCustomColors=null;PINK=v;root.style.setProperty('--pink',v);},'monthly_line':(v)=>{NAVY=v;root.style.setProperty('--navy',v);},'monthly_bar':(v)=>PINK=v};
+    if(m[action.target]) m[action.target](v);
+    rerenderAllCharts();
+    saveThemeToStorage();
+    showToast('📊 Chart "'+action.target+'" → '+v);
+    maybeNavigate(action.navigateTo);
+  }
+
+  // ── Genre pastel set ──
+  if(action.type === 'set_genre_pastel'){
+    snapshotState();
+    window.genreCustomColors=['#FDE8EF','#DBEAFE','#D1FAE5','#FEF9C3','#EDE9FE','#FFEDD5','#FCE7F3','#E0F2FE','#F0FDF4','#FFF7ED','#FDF4FF','#ECFDF5','#FFF1F2','#F0F9FF','#FFFBEB','#F9F5FF','#FEF2F2','#EFF6FF'];
+    if(typeof renderGenre === 'function') renderGenre();
+    saveThemeToStorage();
+    showToast('🎨 Genre chart → pastel!');
+    maybeNavigate(action.navigateTo||'behavior');
+  }
+
+  // ── Ubah semua chart sekaligus ──
+  if(action.type === 'change_all_charts'){
+    snapshotState();
+    const v=action.value;
+    NAVY=v; PINK=v; root.style.setProperty('--navy',v); root.style.setProperty('--pink',v);
+    Object.keys(SEG_COLORS).forEach(k=>SEG_COLORS[k]=v);
+    TIER_COLORS=[v,v,v,v];
+    rerenderAllCharts();
+    saveThemeToStorage();
+    showToast('📊 Semua chart → '+v);
+    maybeNavigate(action.navigateTo);
+  }
+
+  // ── Background pattern ──
+  if(action.type === 'set_bg_pattern'){
+    snapshotState();
+  const patterns = {
+    flowers:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ccircle cx='30' cy='20' r='5' fill='%23EC489918'/%3E%3Ccircle cx='20' cy='35' r='5' fill='%23F43F5E18'/%3E%3Ccircle cx='40' cy='35' r='5' fill='%23EC489918'/%3E%3Ccircle cx='30' cy='50' r='5' fill='%23F43F5E18'/%3E%3Ccircle cx='30' cy='32' r='8' fill='none' stroke='%23EC489920' stroke-width='1.5'/%3E%3C/svg%3E\")",
+    cherry_blossom:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cellipse cx='40' cy='30' rx='8' ry='5' fill='%23FBBF2418' transform='rotate(0 40 30)'/%3E%3Cellipse cx='40' cy='30' rx='8' ry='5' fill='%23F9A8D418' transform='rotate(72 40 30)'/%3E%3Cellipse cx='40' cy='30' rx='8' ry='5' fill='%23FBBF2418' transform='rotate(144 40 30)'/%3E%3Cellipse cx='40' cy='30' rx='8' ry='5' fill='%23F9A8D418' transform='rotate(216 40 30)'/%3E%3Cellipse cx='40' cy='30' rx='8' ry='5' fill='%23FBBF2418' transform='rotate(288 40 30)'/%3E%3Ccircle cx='40' cy='30' r='3' fill='%23F4371820'/%3E%3C/svg%3E\")",
+    stars:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ctext x='10' y='20' font-size='14' fill='%231E2D5A18'%3E★%3C/text%3E%3Ctext x='35' y='45' font-size='10' fill='%23D4607A18'%3E★%3C/text%3E%3Ctext x='5' y='50' font-size='8' fill='%231E2D5A12'%3E✦%3C/text%3E%3C/svg%3E\")",
+    dots:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30'%3E%3Ccircle cx='15' cy='15' r='2' fill='%231E2D5A15'/%3E%3C/svg%3E\")",
+    waves:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='30'%3E%3Cpath d='M0 15 Q25 0 50 15 Q75 30 100 15' stroke='%231E2D5A12' stroke-width='1.5' fill='none'/%3E%3C/svg%3E\")",
+    grid:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M40 0H0M0 40V0' stroke='%231E2D5A10' stroke-width='0.8'/%3E%3C/svg%3E\")",
+    bubbles:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Ccircle cx='20' cy='20' r='8' fill='none' stroke='%231E2D5A10' stroke-width='1.5'/%3E%3Ccircle cx='55' cy='50' r='12' fill='none' stroke='%23D4607A10' stroke-width='1.5'/%3E%3Ccircle cx='65' cy='15' r='5' fill='none' stroke='%231E2D5A08' stroke-width='1'/%3E%3C/svg%3E\")",
+    leaves:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cellipse cx='20' cy='20' rx='10' ry='6' fill='%2316A34A18' transform='rotate(-30 20 20)'/%3E%3Cellipse cx='45' cy='40' rx='10' ry='6' fill='%2316A34A12' transform='rotate(20 45 40)'/%3E%3Cpath d='M20 20 Q25 15 20 10' stroke='%2316A34A15' stroke-width='1' fill='none'/%3E%3C/svg%3E\")",
+    fruits:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Ccircle cx='20' cy='30' r='10' fill='%23F9731620'/%3E%3Ccircle cx='50' cy='20' r='8' fill='%2316A34A20'/%3E%3Ccircle cx='60' cy='55' r='9' fill='%23EF444420'/%3E%3Ccircle cx='25' cy='60' r='7' fill='%23FBBF2420'/%3E%3C/svg%3E\")",
+    diamond:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Cpath d='M20 5 L35 20 L20 35 L5 20 Z' fill='none' stroke='%231E2D5A10' stroke-width='1'/%3E%3C/svg%3E\")",
+    hearts:"url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Ctext x='8' y='35' font-size='22' fill='%23EC489918'%3E♥%3C/text%3E%3Ctext x='35' y='20' font-size='14' fill='%23F43F5E12'%3E♥%3C/text%3E%3C/svg%3E\")"
+  };
+    const pat=patterns[action.pattern];
+    if(pat){
+      if(action.pattern==='dots'){ document.body.style.backgroundImage=pat; document.body.style.backgroundSize='22px 22px'; }
+      else if(action.pattern==='grid'){ document.body.style.backgroundImage=pat; document.body.style.backgroundSize='30px 30px'; }
+      else { document.body.style.backgroundImage=pat; document.body.style.backgroundSize='auto'; }
+      saveThemeToStorage();
+      showToast('🌸 Pattern "'+action.pattern+'" aktif!');
+    }
+    maybeNavigate(action.navigateTo);
+  }
+
+  // ── Ganti jenis chart (FIXED: force re-render + navigate) ──
+  if(action.type === 'change_chart_type'){
+    snapshotState();
+    const ct=action.chartType;
+    const nav=action.navigateTo;
+    const doRender=(fn,tab,label)=>{
+      if(nav||tab) setTab(nav||tab);
+      setTimeout(()=>{ fn(); showToast('📊 '+label+' → '+ct); },150);
+    };
+    if(action.chart==='genre'){       window.currentGenreChartType=ct;   doRender(renderGenre,    'behavior', 'Genre chart'); }
+    if(action.chart==='monthly'){     window.currentMonthlyChartType=ct; doRender(renderMonthly,  'overview', 'Revenue chart'); }
+    if(action.chart==='topcust'){     window.currentTopCustChartType=ct; doRender(renderTopCust,  'overview', 'Top customers'); }
+    if(action.chart==='geo'){         window.currentGeoChartType=ct;     doRender(renderGeo,      'overview', 'Geography chart'); }
+    if(action.chart==='freq'){        window.currentFreqChartType=ct;    doRender(renderFreq,     'behavior', 'Frequency chart'); }
+    if(action.chart==='dur'){         window.currentDurChartType=ct;     doRender(renderDur,      'behavior', 'Duration chart'); }
+    if(action.chart==='cumrev'){      window.currentCumRevChartType=ct;  doRender(renderCumRev,   'behavior', 'Cumulative revenue'); }
+    if(action.chart==='segDonut'){    window.currentSegDonutType=ct;     doRender(renderSegDonut, 'loyalty',  'Segment donut'); }
+    if(action.chart==='segBar'){      window.currentSegBarType=ct;       doRender(renderSegBar,   'loyalty',  'Segment bar'); }
+    if(action.chart==='tierDonut'){   window.currentTierDonutType=ct;    doRender(renderTierDonut,'loyalty',  'Tier donut'); }
+    if(action.chart==='tierRev'){     window.currentTierRevType=ct;      doRender(renderTierRev,  'loyalty',  'Tier revenue'); }
+    if(action.chart==='loyalRegion'){ window.currentLoyalRegionType=ct;  doRender(renderLoyalRegion,'loyalty','Loyal region'); }
+    saveThemeToStorage();
+  }
+
+  // ── Export CSV ──
+  if(action.type === 'export_csv'){
+    exportCSV(action.dataset||'customers', action.month||null, action.customerName||null);
+  }
+
+  // ── Undo ──
+  if(action.type === 'undo'){ undoLastChange(); }
+
+  // ── Reset theme ──
+  if(action.type === 'reset_theme'){
+    snapshotState();
+    document.body.style.backgroundImage='';
+    const defs={'--bg':'#F4F6FB','--white':'#FFFFFF','--border':'#E4E9F2','--navy':'#1E2D5A','--navy2':'#26386E','--navy3':'#2E4080','--pink':'#D4607A','--pink2':'#F0AEC0','--slate':'#3A4A6B','--gray':'#8A97B5'};
+    Object.entries(defs).forEach(([k,v])=>root.style.setProperty(k,v));
+    NAVY=DEFAULT_COLORS.NAVY; PINK=DEFAULT_COLORS.PINK;
+    SEG_COLORS={...DEFAULT_COLORS.SEG}; TIER_COLORS=[...DEFAULT_COLORS.TIER];
+    window.genreCustomColors=null;
+    window.currentGenreChartType='bar'; window.currentMonthlyChartType='line';
+    window.currentTopCustChartType='horizontal_bar'; window.currentGeoChartType='horizontal_bar';
+    window.currentFreqChartType='histogram'; window.currentDurChartType='bar';
+    window.currentSegDonutType='pie'; window.currentSegBarType='bar';
+    window.currentTierDonutType='pie'; window.currentTierRevType='bar';
+    rerenderAllCharts();
+    localStorage.removeItem('dashboardTheme');
+    localStorage.removeItem('dashboardLayout');
+    showToast('🔄 Reset ke tampilan default!');
+  }
+
+  // ── Navigate tab ──
+  if(action.type === 'navigate_tab'){ if(action.tab) setTab(action.tab); showToast('📊 Menuju tab '+action.tab); }
+
+  // ── Move chart (AI-controlled repositioning) ──
+  if(action.type === 'move_chart'){
+    snapshotState();
+    const doMove = () => moveChartByAI(action.chart, action.position);
+    if(action.navigateTo){ setTab(action.navigateTo); setTimeout(doMove, 250); }
+    else doMove();
+  }
+
+  // ── Swap dua section (tukar posisi seluruh section) ──
+  if(action.type === 'swap_sections'){
+    snapshotState();
+    const doSwap = () => {
+      const ok = swapSections(action.sectionA, action.sectionB);
+      if(ok !== false){
+        // Hapus bubble AI terakhir yang mungkin bilang "tidak bisa", ganti dengan sukses
+        const bubbles = document.querySelectorAll('.msg.ai .msg-bubble');
+        const last = bubbles[bubbles.length-1];
+        if(last) last.innerHTML = `✅ Posisi section <b>${action.sectionA}</b> dan <b>${action.sectionB}</b> berhasil ditukar!`;
+      }
+    };
+    if(action.navigateTo){ setTab(action.navigateTo); setTimeout(doSwap, 300); }
+    else doSwap();
+  }
+
+  // ── Pindah chart card kiri/kanan dalam grid ──
+  if(action.type === 'move_card'){
+    snapshotState();
+    const doMove = () => moveCardInGrid(action.chart, action.direction);
+    if(action.navigateTo){ setTab(action.navigateTo); setTimeout(doMove, 250); }
+    else doMove();
+  }
+
+  // ── Pindah KPI card kiri/kanan ──
+  if(action.type === 'move_kpi'){
+    snapshotState();
+    moveKPICard(action.index, action.direction);
+  }
+  
+  // ── Deep Analysis — tampilkan AI insight card di dalam panel tab ──
+  if(action.type === 'deep_analysis'){
+    const targetTab = action.tab || 'loyalty';
+    if(action.navigateTo || action.tab) setTab(targetTab);
+    setTimeout(()=>{
+      // Hapus analysis card lama jika ada
+      document.querySelectorAll('.ai-analysis-card').forEach(el=>el.remove());
+      const panel = document.getElementById('panel-' + targetTab);
+      if(!panel){ showToast('❌ Tab tidak ditemukan'); return; }
+      const card = document.createElement('div');
+      card.className = 'ai-analysis-card';
+      card.style.cssText = 'background:linear-gradient(135deg,rgba(30,45,90,0.04),rgba(212,96,122,0.04));border:1.5px solid rgba(212,96,122,0.3);border-radius:14px;padding:1.2rem 1.4rem;margin-bottom:1.2rem;animation:fadeUp 0.4s ease;position:relative;';
+      card.innerHTML = `
+        <button onclick="this.parentElement.remove()" style="position:absolute;top:0.7rem;right:0.8rem;background:rgba(212,96,122,0.12);border:none;color:var(--pink);border-radius:6px;padding:0.2rem 0.55rem;cursor:pointer;font-size:0.75rem;font-weight:600;">✕</button>
+        <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--pink);margin-bottom:0.6rem;">🔍 AI Deep Analysis</div>
+        <div style="font-size:0.83rem;line-height:1.7;color:var(--slate);white-space:pre-wrap;">${(action.content||'No content').replace(/\\n/g,'\n').replace(/•/g,'<span style="color:var(--pink);font-weight:700;">•</span>')}</div>`;
+      panel.insertBefore(card, panel.firstElementChild);
+      card.scrollIntoView({behavior:'smooth', block:'start'});
+      showToast('🔍 Analysis ditampilkan di dashboard!');
+    }, action.tab ? 300 : 0);
+  }
+
+  // ── Highlight Chart — sorot chart dengan border animasi ──
+  if(action.type === 'highlight_chart'){
+    const doHighlight = () => {
+      document.querySelectorAll('[data-chart]').forEach(el=>{
+        el.style.border=''; el.style.boxShadow=''; el.style.transition='';
+      });
+      const el = document.querySelector('[data-chart="'+action.chart+'"]');
+      if(el){
+        el.style.transition = 'all 0.3s';
+        el.style.border = '2px solid var(--pink)';
+        el.style.boxShadow = '0 0 0 5px rgba(212,96,122,0.18), 0 8px 32px rgba(212,96,122,0.2)';
+        el.scrollIntoView({behavior:'smooth', block:'center'});
+        // Pulse animation: dim & brighten 3x lalu hilang
+        let count=0;
+        const pulse = setInterval(()=>{
+          el.style.boxShadow = count%2===0
+            ? '0 0 0 8px rgba(212,96,122,0.08)'
+            : '0 0 0 5px rgba(212,96,122,0.25), 0 8px 32px rgba(212,96,122,0.2)';
+          count++;
+          if(count>=6){ clearInterval(pulse); setTimeout(()=>{ el.style.border=''; el.style.boxShadow=''; }, 500); }
+        }, 600);
+        showToast('✨ Chart disorot!');
+      } else {
+        showToast('❌ Chart tidak ditemukan: ' + action.chart);
+      }
+    };
+    if(action.navigateTo){ setTab(action.navigateTo); setTimeout(doHighlight, 350); }
+    else doHighlight();
+  }
+
+  // ── Show Summary Card — kartu ringkasan di atas KPI ──
+  if(action.type === 'show_summary_card'){
+    document.getElementById('ai-summary-card')?.remove();
+    const card = document.createElement('div');
+    card.id = 'ai-summary-card';
+    card.style.cssText = 'background:linear-gradient(135deg,var(--navy),var(--navy3));color:#fff;border-radius:14px;padding:1.2rem 1.5rem;margin-bottom:1.2rem;animation:fadeUp 0.4s ease;position:relative;';
+    card.innerHTML = `
+      <button onclick="this.parentElement.remove()" style="position:absolute;top:0.7rem;right:0.8rem;background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:6px;padding:0.2rem 0.55rem;cursor:pointer;font-size:0.75rem;">✕</button>
+      <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:#F0AEC0;margin-bottom:0.55rem;">📋 AI Summary</div>
+      <div style="font-size:0.85rem;line-height:1.7;white-space:pre-wrap;">${(action.content||'').replace(/\\n/g,'\n')}</div>`;
+    const kpiRow = document.getElementById('kpiRow');
+    if(kpiRow) kpiRow.parentElement.insertBefore(card, kpiRow);
+    else document.querySelector('.main')?.prepend(card);
+    card.scrollIntoView({behavior:'smooth', block:'start'});
+    showToast('📋 Summary card ditampilkan!');
+  }
+
+  // ── Filter by Segment — ubah checkbox sidebar ──
+  if(action.type === 'filter_by_segment'){
+    snapshotState();
+    const segs = Array.isArray(action.segments) ? action.segments : [action.segments].filter(Boolean);
+    if(!segs.length){ showToast('❌ Segment tidak valid'); }
+    else {
+      document.querySelectorAll('[data-seg]').forEach(cb => {
+        cb.checked = segs.includes(cb.dataset.seg);
+      });
+      applyFilters();
+      showToast('🎯 Filter aktif: ' + segs.join(', '));
+    }
+  }
+
+  // ── Set Date Range — ubah month range slider ──
+  if(action.type === 'set_date_range'){
+    snapshotState();
+    const fromEl = document.getElementById('monthFrom');
+    const toEl   = document.getElementById('monthTo');
+    if(!fromEl || !toEl){ showToast('❌ Month range belum ready'); }
+    else {
+      if(action.from !== undefined && action.from !== null) fromEl.value = action.from;
+      if(action.to   !== undefined && action.to   !== null) toEl.value   = action.to;
+      applyFilters();
+      const fromLabel = fromEl.options[fromEl.selectedIndex]?.text || action.from;
+      const toLabel   = toEl.options[toEl.selectedIndex]?.text   || action.to;
+      showToast('📅 Range: ' + fromLabel + ' → ' + toLabel);
+    }
+  }
+
+  // ── Resize chat ──
+  if(action.type === 'resize_chat'){
+    const win=document.getElementById('chatWindow');
+    if(win){ if(action.width) win.style.width=action.width; if(action.height) win.style.height=action.height; showToast('↔️ Ukuran chatbot disesuaikan'); }
+  }
+}
+
+function showToast(msg){
+  document.querySelector('.ai-toast')?.remove();
+  const t = document.createElement('div');
+  t.className = 'ai-toast';
+  t.style.cssText = 'position:fixed;bottom:7.5rem;right:2rem;z-index:9999;background:var(--navy);color:#fff;padding:0.6rem 1.1rem;border-radius:10px;font-size:0.80rem;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,0.25);animation:fadeUp 0.3s ease;border-left:3px solid var(--pink);max-width:300px;';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity 0.4s'; setTimeout(()=>t.remove(),400); }, 2500);
+}
+
+function buildSystemPrompt(){
+  const segCounts={Champions:0,Loyal:0,'At Risk':0,Lost:0};
+  (RAW_RFM||[]).forEach(d=>segCounts[d.segment]=(segCounts[d.segment]||0)+1);
+  const rfmArr=RAW_RFM||[];
+  // Ambil top customers dari RAW_CUSTOMERS (total_revenue aktual, bukan RFM monetary)
+  const custSorted=[...( RAW_CUSTOMERS||[])].sort((a,b)=>b.total_revenue-a.total_revenue);
+  const topCust=custSorted.slice(0,5).map((d,i)=>`${i+1}. ${d.name} ($${parseFloat(d.total_revenue).toFixed(2)}, ${d.rental_count} rentals)`).join(', ');
+  const top15CustStr=custSorted.slice(0,15).map(d=>`${d.name}:$${parseFloat(d.total_revenue).toFixed(2)}`).join(', ');
+  const kpi=window.liveKPI||{total_customers:599,total_revenue:67416.51,total_rentals:16044,avg_transaction:4.20,avg_spend_per_customer:112.55};
+  const genreStr=(RAW_GENRE||[]).map(g=>g.genre+':'+g.count).join(', ');
+  const monthlyStr=(RAW_MONTHLY||[]).map(m=>m.label+':$'+m.revenue).join(', ');
+  const genreMonthlyStr=(window.RAW_GENRE_MONTHLY||[]).map(r=>r.label+'/'+r.genre+'='+r.rental_count).slice(0,80).join('; ');
+  const regionStr=(window.RAW_RFM_BY_REGION||[]).slice(0,15).map(r=>r.country+':loyal='+r.loyal_count+',rev=$'+r.loyal_revenue).join('; ');
+  const activeSeg=[...document.querySelectorAll('[data-seg]')].filter(c=>c.checked).map(c=>c.dataset.seg).join(', ');
+  const currentTab=document.querySelector('.tab-btn.active')?.textContent?.trim()||'Overview';
+
+// ── Computed stats untuk deep analysis ──
+  const custArr = RAW_CUSTOMERS || [];
+  const revenues = custArr.map(c=>c.total_revenue).filter(Boolean);
+  const avgRev = revenues.length ? (revenues.reduce((a,b)=>a+b,0)/revenues.length).toFixed(2) : 0;
+  const maxRev = revenues.length ? Math.max(...revenues).toFixed(2) : 0;
+  const minRev = revenues.length ? Math.min(...revenues).toFixed(2) : 0;
+  const top20pct = Math.max(1, Math.ceil(custArr.length*0.2));
+  const top20rev = [...revenues].sort((a,b)=>b-a).slice(0,top20pct).reduce((a,b)=>a+b,0).toFixed(2);
+  const totalRevAll = revenues.reduce((a,b)=>a+b,0)||1;
+  const paretoRatio = ((top20rev/totalRevAll)*100).toFixed(1);
+  const rfmArr2 = RAW_RFM||[];
+  const atRiskCount = rfmArr2.filter(d=>parseInt(d.recency_days)>=90).length;
+  const avgRecency = rfmArr2.length ? (rfmArr2.reduce((s,d)=>s+parseInt(d.recency_days||0),0)/rfmArr2.length).toFixed(0) : 0;
+  const topGenre = (RAW_GENRE||[]).length ? (RAW_GENRE||[])[0] : {genre:'Sports',count:1179};
+  const peakMonth = (RAW_MONTHLY||[]).length ? [...(RAW_MONTHLY||[])].sort((a,b)=>b.revenue-a.revenue)[0] : {label:'Jul 2005',revenue:28373};
+  const avgFreq = rfmArr2.length ? (rfmArr2.reduce((s,d)=>s+parseInt(d.frequency||0),0)/rfmArr2.length).toFixed(1) : 0;
+  const champAvgRev = rfmArr2.filter(d=>d.segment==='Champions').length
+    ? (rfmArr2.filter(d=>d.segment==='Champions').reduce((s,d)=>s+parseFloat(d.monetary||0),0)/rfmArr2.filter(d=>d.segment==='Champions').length).toFixed(2)
+    : 0;
+  const loyalAvgRev = rfmArr2.filter(d=>d.segment==='Loyal').length
+    ? (rfmArr2.filter(d=>d.segment==='Loyal').reduce((s,d)=>s+parseFloat(d.monetary||0),0)/rfmArr2.filter(d=>d.segment==='Loyal').length).toFixed(2)
+    : 0;
+
+return `Kamu adalah FAMS AI — asisten analytics untuk Customer Analytics Dashboard dvdrental.
+Dibuat oleh: Fatwa, Marsha, Syakira — President University, Information System.
+
+ATURAN WAJIB:
+1. Prioritas utama: dashboard ini, data dvdrental, customer analytics.
+2. SCOPE KETAT: Kamu HANYA boleh menjawab pertanyaan yang berkaitan dengan dvdrental database, dashboard ini, atau customer analytics. Pertanyaan di luar itu (coding umum, matematika, sains, sejarah, berita, politik, dll) → tolak dengan sopan: "Maaf, saya hanya bisa membantu seputar dvdrental database dan dashboard ini."
+3. HANYA tolak: konten berbahaya, NSFW, atau permintaan ilegal.
+4. Jawaban SINGKAT dan LANGSUNG. Maksimal 3-4 kalimat untuk pertanyaan sederhana.
+5. JANGAN mulai kalimat dengan "Maaf" untuk pertanyaan yang valid.
+6. Untuk perubahan visual → 1 kalimat konfirmasi + ACTION di akhir.
+7. Untuk CSV → langsung trigger action export_csv, JANGAN tulis kalimat panjang.
+8. Gunakan bahasa yang sama dengan user (Indonesia/Inggris/campur).
+9. AKURASI DATA WAJIB: HANYA gunakan angka dari DATA LIVE dan COMPUTED STATS di atas. JANGAN mengarang, JANGAN koreksi data yang sudah benar, JANGAN sebut angka yang tidak ada di context.
+10. Jika ditanya tentang customer spesifik → cek "Top 15 customers revenue" dulu. Jika tidak ada di sana, bilang "data tidak tersedia di context saat ini, coba export CSV untuk detail lengkap".
+11. JANGAN pernah "meralat diri sendiri" dengan angka yang tidak ada di DATA LIVE — ini akan menyebabkan informasi salah.
+
+DATA LIVE:
+- Customers: ${kpi.total_customers} | Revenue: $${parseFloat(kpi.total_revenue||0).toLocaleString()} | Rentals: ${kpi.total_rentals}
+- Avg Transaction: $${kpi.avg_transaction} | Avg/Customer: $${kpi.avg_spend_per_customer}
+- Champions: ${segCounts.Champions} | Loyal: ${segCounts.Loyal} | At Risk: ${segCounts['At Risk']} | Lost: ${segCounts.Lost}
+- Top 5 customers (by revenue): ${topCust}
+- Top 15 customers revenue: ${top15CustStr}
+- Genre rentals: ${genreStr}
+- Revenue bulanan: ${monthlyStr}
+- Genre per bulan: ${genreMonthlyStr}
+- Filter aktif: ${activeSeg}
+- Tab aktif: ${currentTab}
+- Churn prediction terakhir: ${window._lastChurnData ? `${window._lastChurnData.total_at_risk} at-risk, top: ${(window._lastChurnData.top5||[]).map((c,i)=>`${i+1}.${c.name}(${(c.churn_probability*100).toFixed(0)}%)`).join(', ')}` : 'belum dijalankan'}
+
+COMPUTED STATS (gunakan untuk deep analysis & jawaban akurat):
+- Avg revenue/customer: $${avgRev} | Max: $${maxRev} | Min: $${minRev}
+- Top 20% customer menyumbang ${paretoRatio}% revenue (Pareto principle)
+- At-risk customers (90+ hari tidak rental): ${atRiskCount} orang dari total ${rfmArr2.length}
+- Avg recency seluruh customer: ${avgRecency} hari
+- Avg rental frequency: ${avgFreq}x per customer
+- Avg revenue Champions: $${champAvgRev} | Avg revenue Loyal: $${loyalAvgRev}
+- Genre terpopuler: ${topGenre.genre} (${topGenre.count} rentals)
+- Bulan revenue tertinggi: ${peakMonth.label} ($${parseFloat(peakMonth.revenue||0).toLocaleString()})
+
+CHART REGISTRY (nama resmi setiap chart):
+- "Monthly Revenue" / "revenue bulanan" / "revenue chart" → chart ID: monthly (Tab: Overview)
+- "Top N Customers" / "top customers" / "customer chart" → chart ID: topcust (Tab: Overview)
+- "Customer by Country" / "geo chart" / "negara chart" → chart ID: geo (Tab: Overview)
+- "Favorite Genres" / "genre chart" → chart ID: genre (Tab: Behavior)
+- "Scatter Plot" / "scatter" / "more rentals more revenue" → chart ID: scatter (Tab: Behavior)
+- "Rental Frequency Distribution" / "histogram" / "frequency chart" → chart ID: freq (Tab: Behavior)
+- "How Long Do Customers Keep DVDs" / "duration chart" → chart ID: dur (Tab: Behavior)
+- "Cumulative Revenue" / "cumulative" → chart ID: cumrev (Tab: Behavior)
+- "RFM Segment Donut" / "donut RFM" / "segment distribution" → chart ID: segDonut (Tab: Loyalty)
+- "Avg Spending per Segment" / "segment bar" → chart ID: segBar (Tab: Loyalty)
+- "Spending Tier Donut" / "tier donut" → chart ID: tierDonut (Tab: Loyalty)
+- "Revenue by Tier" / "tier revenue" / "tier bar" → chart ID: tierRev (Tab: Loyalty)
+- "Loyal by Region" / "region chart" → chart ID: loyalRegion (Tab: Loyalty)
+
+NAVIGASI PINTAR:
+- "pergi ke overview" / "buka tab pertama" / "lihat KPI" → navigate_tab tab=overview
+- "pergi ke behavior" / "lihat genre" / "lihat scatter" → navigate_tab tab=behavior
+- "pergi ke loyalty" / "lihat RFM" / "lihat segmentasi" → navigate_tab tab=loyalty
+- "pergi ke customer detail" / "cari customer" → navigate_tab tab=detail
+- "pergi ke ML" / "lihat prediksi" → navigate_tab tab=ml
+- "pergi ke scatter plot" → navigate_tab tab=behavior (lalu user bisa scroll ke scatter)
+- "pergi ke genre chart" → navigate_tab tab=behavior
+
+BACKGROUND PATTERNS tersedia:
+flowers, cherry_blossom, stars, dots, waves, grid, bubbles, leaves
+(user tidak perlu tahu nama pattern, AI yang handle berdasarkan permintaan)
+
+━━━ AKSI DASHBOARD ━━━
+Tambahkan TEPAT SATU <ACTION> di paling akhir respons saat user minta ubah visual.
+
+<ACTION>{"type":"change_color","var":"VAR","value":"#HEX"}</ACTION>
+→ Ubah SATU bagian saja. Vars:
+  --bg = background halaman
+  --white = sidebar + semua card/panel
+  --nav = header atas
+  --border = garis border
+  --navy = warna utama gelap (chart bars, accent)
+  --pink = warna aksen terang
+  --slate = warna teks utama
+  --gray = warna teks muted
+
+PENTING - Target spesifik:
+- "ubah background" → var=--bg
+- "ubah sidebar" → var=--white (sidebar pakai --white)
+- "ubah header" → var=--navy (header pakai navy gradient)
+- "ubah KPI cards (overview)" → change_color var=--white (cards pakai --white)
+- "ubah warna chart top customers" → change_chart_color target=primary
+- "ubah warna genre chart" → change_chart_color target=genre_all
+- "ubah warna bar top customers" → change_chart_color target=primary
+- "ubah accent/tombol/highlight" → change_color var=--pink
+
+<ACTION>{"type":"change_chart_color","target":"TARGET","value":"#HEX"}</ACTION>
+Targets: accent, primary, all_bars, genre_all, monthly_line, monthly_bar,
+         seg_champions, seg_loyal, seg_atrisk, seg_lost,
+         tier_low, tier_mid, tier_high, tier_top,
+         topcust_bars, scatter_top, scatter_high, scatter_mid, scatter_low
+
+<ACTION>{"type":"change_theme","preset":"PRESET"}</ACTION>
+Presets: dark, ocean, sunset, purple, light, pink_pastel, mint, lavender, rose_gold, flowers
+
+<ACTION>{"type":"set_bg_pattern","pattern":"PATTERN"}</ACTION>
+Patterns: flowers, cherry_blossom, stars, dots, waves, grid, bubbles, leaves
+
+<ACTION>{"type":"change_chart_type","chart":"CHART_ID","chartType":"TYPE","navigateTo":"TAB"}</ACTION>
+BISA ganti: genre(bar/pie/donut/horizontal_bar/vertical_bar), monthly(line/bar), topcust(horizontal_bar/vertical_bar/pie/donut), geo(horizontal_bar/pie/donut), freq(histogram/bar/line/area), dur(bar/line/area/horizontal_bar), segDonut(pie/donut/bar), segBar(bar/horizontal_bar), tierDonut(pie/donut), tierRev(bar/horizontal_bar)
+TIDAK BISA ganti: scatter (selalu scatter), cumrev (selalu area)
+Wajib isi navigateTo agar user langsung melihat hasilnya!
+
+<ACTION>{"type":"move_chart","chart":"CHART_ID","position":"POSITION","navigateTo":"TAB"}</ACTION>
+position: first, last, up, down, before_CHARTID, after_CHARTID
+Contoh: "pindah genre ke atas" = move_chart chart=genre position=first navigateTo=behavior
+
+// ── TUKAR POSISI SELURUH SECTION (swap 2 section dalam tab yg sama) ──
+<ACTION>{"type":"swap_sections","sectionA":"ID","sectionB":"ID","navigateTo":"TAB"}</ACTION>
+PENTING: section hanya bisa ditukar dengan section lain di TAB yang SAMA!
+Section IDs:
+  Overview : revenue-trend, customer-overview
+  Behavior : rental-behavior, rental-distribution, revenue-growth
+  Loyalty  : rfm-segmentation, spending-tier, loyal-region, at-risk, key-insights
+Contoh: "tukar Revenue Trend sama Customer Overview" = swap_sections sectionA=revenue-trend sectionB=customer-overview navigateTo=overview
+Contoh: "pindah RFM Segmentation ke bawah Spending Tier" = swap_sections sectionA=rfm-segmentation sectionB=spending-tier navigateTo=loyalty
+Contoh: "tukar Rental Behavior sama Revenue Growth" = swap_sections sectionA=rental-behavior sectionB=revenue-growth navigateTo=behavior
+
+// ── PINDAH CHART CARD KIRI/KANAN dalam satu grid section ──
+<ACTION>{"type":"move_card","chart":"CHART_ID","direction":"left/right","navigateTo":"TAB"}</ACTION>
+Hanya bergerak dalam gridnya sendiri (tidak bisa pindah antar section)
+Chart IDs per grid: [topcust, geo] | [genre, scatter] | [freq, dur] | [segDonut, segBar] | [tierDonut, tierRev]
+Contoh: "pindah geo ke kiri" = move_card chart=geo direction=left navigateTo=overview
+Contoh: "tukar topcust dan geo" = move_card chart=geo direction=left navigateTo=overview
+Contoh: "tukar segDonut dan segBar" = move_card chart=segBar direction=left navigateTo=loyalty
+
+// ── PINDAH KPI CARD KIRI/KANAN di Key Metrics ──
+<ACTION>{"type":"move_kpi","index":"0-4","direction":"left/right/first/last"}</ACTION>
+KPI index: 0=Total Customers, 1=Total Revenue, 2=Total Rentals, 3=Avg Transaction, 4=Avg/Customer
+Contoh: "pindah Total Revenue ke paling kiri" = move_kpi index=1 direction=first
+Contoh: "pindah Total Customers ke kanan" = move_kpi index=0 direction=right
+
+<ACTION>{"type":"export_csv","dataset":"DATASET","month":"YYYY-MM","customerName":"NAMA"}</ACTION>
+Datasets:
+  monthly = revenue bulanan semua bulan
+  customers = semua customer data
+  rfm = RFM segmentation
+  genre = popularitas genre
+  rentals_by_month = transaksi per bulan (isi month: "2005-03" atau array ["2005-03","2005-04"])
+  customer_history = history rental 1 customer (isi customerName: nama customer)
+  loyal_region = loyal customer by country
+
+Contoh:
+"csv history Eleanor" → export_csv dataset=customer_history customerName=Eleanor
+"download csv rental maret" → export_csv dataset=rentals_by_month month=2005-03
+"csv semua customer" → export_csv dataset=customers
+"csv transaksi april dan mei" → export_csv dataset=rentals_by_month month=["2005-04","2005-05"]
+
+<ACTION>{"type":"navigate_tab","tab":"TAB"}</ACTION>
+<ACTION>{"type":"undo"}</ACTION>
+<ACTION>{"type":"reset_theme"}</ACTION>
+<ACTION>{"type":"resize_chat","width":"Xpx","height":"Ypx"}</ACTION>
+
+<ACTION>{"type":"deep_analysis","tab":"TAB","content":"INSIGHT"}</ACTION>
+Gunakan saat user minta: "analisis dashboard", "kasih insight", "evaluasi customer", "rekomendasi bisnis", "kesimpulan data"
+tab bisa: overview, behavior, loyalty
+content: analisis 3-5 poin berdasarkan data live yang ADA di atas (gunakan angka spesifik dari COMPUTED STATS)
+Contoh: "analisis customer segmentation" → deep_analysis tab=loyalty content="• Champions hanya ${segCounts.Champions} customer tapi avg spend $${champAvgRev}\n• ${atRiskCount} customer at-risk perlu campaign retensi..."
+
+<ACTION>{"type":"highlight_chart","chart":"CHART_ID","navigateTo":"TAB"}</ACTION>
+Gunakan saat: "tunjukkan chart X", "mana chart revenue?", "sorot scatter plot", "highlight genre"
+Otomatis scroll ke chart dan beri border pink berkedip selama 4 detik
+
+<ACTION>{"type":"show_summary_card","content":"RINGKASAN"}</ACTION>
+Gunakan saat: "ringkasan dashboard", "summary data", "overview singkat", "kasih kesimpulan"
+Muncul sebagai card navy di atas KPI row, bisa di-close user
+
+<ACTION>{"type":"filter_by_segment","segments":["SEGMENT"]}</ACTION>
+Segments: "Low Spender", "Mid Spender", "High Spender", "Top Spender"
+Gunakan saat: "filter Top Spender saja", "tampilkan hanya Champions", "sembunyikan Low Spender"
+Contoh: "show only high value customers" = filter_by_segment segments=["High Spender","Top Spender"]
+Reset semua: filter_by_segment segments=["Low Spender","Mid Spender","High Spender","Top Spender"]
+
+<ACTION>{"type":"set_date_range","from":"INDEX","to":"INDEX"}</ACTION>
+Month index (dari RAW_MONTHLY): 0=bulan pertama ... ${(RAW_MONTHLY||[]).length-1}=bulan terakhir
+Gunakan saat: "filter bulan Juli saja", "show data Mei sampai Agustus", "reset semua bulan"
+Contoh: "tampilkan hanya data puncak Juli 2005" = cari index Jul 2005 di monthlyStr lalu set_date_range
+Reset: set_date_range from=0 to=${(RAW_MONTHLY||[]).length-1}
+
+━━━ PANDUAN WARNA AKURAT ━━━
+pink=#EC4899 | soft pink=#FCE7F3 | pink tua=#9D174D | baby pink=#FDE8EF | hot pink=#F43F5E
+merah=#DC2626 | biru=#2563EB | biru muda=#93C5FD | biru tua=#1E3A8A | navy=#1E2D5A
+hijau=#16A34A | mint=#6EE7B7 | kuning=#EAB308 | orange=#F97316 | gold=#D97706
+ungu=#7C3AED | lavender=#C4B5FD | tosca=#0D9488 | abu=#6B7280
+hitam=#111827 | putih=#FFFFFF | cream=#FEF3C7
+pastel pink=#FDE8EF | pastel biru=#DBEAFE | pastel hijau=#D1FAE5 | pastel kuning=#FEF9C3
+pastel ungu=#EDE9FE | pastel orange=#FFEDD5 | pastel merah=#FEE2E2
+
+INGAT: HANYA SATU action per respons. Tulis di paling akhir.`;
+}
+
+async function sendMessage(){
+  const input=document.getElementById('chatInput');
+  const text=input.value.trim();
+  if(!text) return;
+  if(!groqApiKey){document.getElementById('apiSetup').scrollIntoView();alert('Masukkan Groq API key dulu!');return;}
+  input.value='';input.style.height='auto';
+  document.getElementById('sendBtn').disabled=true;
+  addUserMsg(text);
+  chatHistory.push({role:'user',content:text});
+  if(thinkingOpen) document.getElementById('thinkingText').textContent=`Processing: "${text}"\nQuerying Groq LLaMA-3.3-70b...`;
+  const tid=addTyping();
+  try{
+    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${groqApiKey}`},
+      body:JSON.stringify({
+        model:'llama-3.3-70b-versatile',
+        messages:[{role:'system',content:buildSystemPrompt()},...chatHistory],
+        max_tokens:1024,temperature:0.65
+      })
+    });
+    if(!res.ok){const e=await res.json();throw new Error(e.error?.message||`HTTP ${res.status}`);}
+    const data=await res.json();
+    const reply=data.choices[0]?.message?.content||'No response.';
+    chatHistory.push({role:'assistant',content:reply});
+    if(thinkingOpen) document.getElementById('thinkingText').textContent=`Q: "${text}"\nModel: ${data.model}\nTokens: ${data.usage?.total_tokens}\nFinish: ${data.choices[0]?.finish_reason}\n✅ Done.`;
+    document.getElementById(tid)?.remove();
+    addAiMsg(reply);
+  }catch(err){
+    document.getElementById(tid)?.remove();
+    if(thinkingOpen) document.getElementById('thinkingText').textContent=`Error: ${err.message}`;
+    const msg=err.message.includes('401')?'🔑 API key tidak valid.':err.message.includes('429')?'⏱️ Rate limit. Tunggu sebentar.':` ❌ ${err.message}`;
+    addAiMsg(msg);
+    if(err.message.includes('401')){groqApiKey='';localStorage.removeItem('groq_api_key');document.getElementById('apiSetup').style.display='block';}
+  }finally{
+    document.getElementById('sendBtn').disabled=false;
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// SORTABLE CHART DRAG & DROP
+// ══════════════════════════════════════════════════════════════
+function moveChartByAI(chartId, position) {
+  const chartEl = document.querySelector(`[data-chart="${chartId}"]`);
+  if (!chartEl) { showToast('❌ Chart tidak ditemukan: ' + chartId); return; }
+  const parent = chartEl.parentElement;
+  if (position === 'first') {
+    parent.prepend(chartEl);
+  } else if (position === 'last') {
+    parent.append(chartEl);
+  } else if (position === 'up') {
+    const prev = chartEl.previousElementSibling;
+    if (prev) parent.insertBefore(chartEl, prev);
+  } else if (position === 'down') {
+    const next = chartEl.nextElementSibling;
+    if (next) next.after(chartEl);
+  } else if (position?.startsWith('before_')) {
+    const targetId = position.replace('before_', '');
+    const target = document.querySelector(`[data-chart="${targetId}"]`);
+    if (target) parent.insertBefore(chartEl, target);
+    else showToast('⚠️ Target chart tidak ditemukan');
+  } else if (position?.startsWith('after_')) {
+    const targetId = position.replace('after_', '');
+    const target = document.querySelector(`[data-chart="${targetId}"]`);
+    if (target) target.after(chartEl);
+    else showToast('⚠️ Target chart tidak ditemukan');
+  }
+  const RENDER_MAP = {
+    monthly:renderMonthly, topcust:renderTopCust, geo:renderGeo,
+    genre:renderGenre, scatter:renderScatter, freq:renderFreq,
+    dur:renderDur, cumrev:renderCumRev, segDonut:renderSegDonut,
+    segBar:renderSegBar, tierDonut:renderTierDonut, tierRev:renderTierRev,
+    loyalRegion:renderLoyalRegion
+  };
+  setTimeout(() => { if (RENDER_MAP[chartId]) RENDER_MAP[chartId](); }, 250);
+  showToast('📊 Chart "' + chartId + '" berhasil dipindahkan!');
+}
+
+// ══════════════════════════════════════════════════════════════
+// SWAP SECTIONS — tukar posisi seluruh section via AI
+// Aturan: section hanya bisa tukar dgn section lain di tab yg sama
+// ══════════════════════════════════════════════════════════════
+function swapSections(sectionA, sectionB) {
+  const elA = document.querySelector('[data-section="'+sectionA+'"]');
+  const elB = document.querySelector('[data-section="'+sectionB+'"]');
+  if (!elA) { showToast('❌ Section tidak ditemukan: ' + sectionA); return false; }
+  if (!elB) { showToast('❌ Section tidak ditemukan: ' + sectionB); return false; }
+  if (elA.parentElement !== elB.parentElement) {
+    showToast('⚠️ Kedua section harus berada di tab yang sama!'); return false;
+  }
+  // Swap DOM menggunakan marker comment agar posisi tepat
+  const parent = elA.parentElement;
+  const markerA = document.createComment('swapA');
+  const markerB = document.createComment('swapB');
+  parent.insertBefore(markerA, elA);
+  parent.insertBefore(markerB, elB);
+  parent.insertBefore(elA, markerB);
+  parent.insertBefore(elB, markerA);
+  markerA.remove();
+  markerB.remove();
+  showToast('✅ Section "' + sectionA + '" ↔ "' + sectionB + '" berhasil ditukar!');
+  saveDashboardLayout();
+  // Re-render semua chart setelah posisi berubah
+  setTimeout(() => rerenderAllCharts(), 200);
+  return true;
+}
+
+// ══════════════════════════════════════════════════════════════
+// MOVE CARD LEFT/RIGHT — pindah chart card kiri/kanan dalam grid
+// Hanya bergerak dalam parentnya (satu grid/section)
+// ══════════════════════════════════════════════════════════════
+function moveCardInGrid(chartId, direction) {
+  const el = document.querySelector('[data-chart="'+chartId+'"]');
+  if (!el) { showToast('❌ Chart tidak ditemukan: ' + chartId); return; }
+  const parent = el.parentElement;
+  if (direction === 'left') {
+    const prev = el.previousElementSibling;
+    if (prev) { parent.insertBefore(el, prev); }
+    else { showToast('⚠️ Chart sudah di posisi paling kiri'); return; }
+  } else if (direction === 'right') {
+    const next = el.nextElementSibling;
+    if (next) { next.after(el); }
+    else { showToast('⚠️ Chart sudah di posisi paling kanan'); return; }
+  }
+  const RENDER_MAP = {
+    monthly:renderMonthly, topcust:renderTopCust, geo:renderGeo,
+    genre:renderGenre, scatter:renderScatter, freq:renderFreq,
+    dur:renderDur, cumrev:renderCumRev, segDonut:renderSegDonut,
+    segBar:renderSegBar, tierDonut:renderTierDonut, tierRev:renderTierRev,
+    loyalRegion:renderLoyalRegion
+  };
+  setTimeout(() => { if (RENDER_MAP[chartId]) RENDER_MAP[chartId](); }, 200);
+  showToast('📊 "' + chartId + '" pindah ke ' + direction);
+  saveDashboardLayout();
+}
+
+// ══════════════════════════════════════════════════════════════
+// MOVE KPI CARD — pindah kartu KPI kiri/kanan atau ke posisi tertentu
+// ══════════════════════════════════════════════════════════════
+function moveKPICard(indexOrLabel, direction) {
+  const grid = document.getElementById('kpiRow');
+  if (!grid) { showToast('❌ KPI row tidak ditemukan'); return; }
+  const cards = [...grid.children];
+  if (!cards.length) { showToast('❌ KPI belum loaded'); return; }
+
+  // Support pencarian by index (number) atau by label text (string)
+  let idx = parseInt(indexOrLabel);
+  if (isNaN(idx)) {
+    // Cari by label text (case-insensitive partial match)
+    const q = String(indexOrLabel).toLowerCase();
+    idx = cards.findIndex(c => c.textContent.toLowerCase().includes(q));
+    if (idx < 0) { showToast('❌ KPI card tidak ditemukan: ' + indexOrLabel); return; }
+  }
+  if (idx < 0 || idx >= cards.length) { showToast('❌ Index KPI tidak valid: ' + idx); return; }
+
+  const el = cards[idx];
+  if (direction === 'left') {
+    if (idx === 0) { showToast('⚠️ KPI sudah di posisi paling kiri'); return; }
+    grid.insertBefore(el, cards[idx - 1]);
+    showToast('⬅️ KPI card dipindah ke kiri');
+  } else if (direction === 'right') {
+    if (idx >= cards.length - 1) { showToast('⚠️ KPI sudah di posisi paling kanan'); return; }
+    cards[idx + 1].after(el);
+    showToast('➡️ KPI card dipindah ke kanan');
+  } else if (direction === 'first') {
+    grid.prepend(el);
+    showToast('⬅️ KPI card dipindah ke paling kiri');
+  } else if (direction === 'last') {
+    grid.append(el);
+    showToast('➡️ KPI card dipindah ke paling kanan');
+  }
+  saveDashboardLayout();
+}
+
+// ══════════════════════════════════════════════════════════════
+// PERSIST LAYOUT — simpan & restore posisi section/card/kpi
+// ══════════════════════════════════════════════════════════════
+function saveDashboardLayout() {
+  const layout = {};
+  // Simpan urutan section tiap tab
+  ['panel-overview','panel-behavior','panel-loyalty'].forEach(panelId => {
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+    const sections = [...panel.querySelectorAll('[data-section]')];
+    layout['sections_' + panelId] = sections.map(s => s.dataset.section);
+  });
+  // Simpan urutan card dalam setiap grid
+  ['sort-overview-grid','sort-behavior-top','sort-behavior-mid','sort-behavior-bot'].forEach(gridId => {
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    const cards = [...grid.querySelectorAll('[data-chart]')];
+    layout['cards_' + gridId] = cards.map(c => c.dataset.chart);
+  });
+  // Simpan urutan chart dalam section loyalty (grid-ratio, grid-ratio2, grid-2)
+  ['rfm-segmentation','spending-tier','loyal-region'].forEach(secId => {
+    const sec = document.querySelector('[data-section="' + secId + '"]');
+    if (!sec) return;
+    const cards = [...sec.querySelectorAll('[data-chart]')];
+    if (cards.length) layout['cards_' + secId] = cards.map(c => c.dataset.chart);
+  });
+  // Simpan urutan KPI cards
+  const kpiRow = document.getElementById('kpiRow');
+  if (kpiRow) {
+    layout['kpi_order'] = [...kpiRow.children].map(c => c.querySelector('.kpi-label')?.textContent?.trim() || '');
+  }
+  localStorage.setItem('dashboardLayout', JSON.stringify(layout));
+}
+
+function restoreDashboardLayout() {
+  const saved = localStorage.getItem('dashboardLayout');
+  if (!saved) return;
+  let layout;
+  try { layout = JSON.parse(saved); } catch(e) { return; }
+  // Restore urutan section tiap tab
+  ['panel-overview','panel-behavior','panel-loyalty'].forEach(panelId => {
+    const order = layout['sections_' + panelId];
+    if (!order) return;
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+    order.forEach(secId => {
+      const el = panel.querySelector('[data-section="' + secId + '"]');
+      if (el) panel.appendChild(el);
+    });
+  });
+  // Restore urutan card dalam grid
+  ['sort-overview-grid','sort-behavior-top','sort-behavior-mid','sort-behavior-bot'].forEach(gridId => {
+    const order = layout['cards_' + gridId];
+    if (!order) return;
+    const grid = document.getElementById(gridId);
+    if (!grid) return;
+    order.forEach(chartId => {
+      const el = grid.querySelector('[data-chart="' + chartId + '"]');
+      if (el) grid.appendChild(el);
+    });
+  });
+  // Restore urutan card dalam loyalty sections
+  ['rfm-segmentation','spending-tier','loyal-region'].forEach(secId => {
+    const order = layout['cards_' + secId];
+    if (!order) return;
+    const sec = document.querySelector('[data-section="' + secId + '"]');
+    if (!sec) return;
+    const firstChart = sec.querySelector('[data-chart]');
+    if (!firstChart) return;
+    const grid = firstChart.parentElement;
+    order.forEach(chartId => {
+      const el = sec.querySelector('[data-chart="' + chartId + '"]');
+      if (el) grid.appendChild(el);
+    });
+  });
+  // KPI order — simpan index dan reorder setelah render
+  if (layout['kpi_order']) {
+    window._pendingKPIOrder = layout['kpi_order'];
+  }
+}
+
+// ── Drag chat window ──
+function initChatDrag(){
+  const win = document.getElementById('chatWindow');
+  const hdr = document.getElementById('chatHeader');
+  let dragging=false, resizing=false, dir='', ox=0, oy=0, ow=0, oh=0, ol=0, ot=0;
+
+  // ── Drag to move ──
+  hdr.addEventListener('mousedown', e=>{
+    if(e.target.closest('.chat-header-btn')) return;
+    dragging = true;
+    const r = win.getBoundingClientRect();
+    ox = e.clientX - r.left; oy = e.clientY - r.top;
+    win.style.right='auto'; win.style.bottom='auto';
+    win.style.left=r.left+'px'; win.style.top=r.top+'px';
+    e.preventDefault();
+  });
+
+  // ── Resize from any edge ──
+  win.querySelectorAll('.resize-handle').forEach(h=>{
+    h.addEventListener('mousedown', e=>{
+      resizing = true;
+      dir = h.dataset.dir;
+      const r = win.getBoundingClientRect();
+      ox = e.clientX; oy = e.clientY;
+      ow = r.width;   oh = r.height;
+      ol = r.left;    ot = r.top;
+      win.style.right='auto'; win.style.bottom='auto';
+      win.style.left=ol+'px'; win.style.top=ot+'px';
+      e.preventDefault(); e.stopPropagation();
+    });
+  });
+
+  document.addEventListener('mousemove', e=>{
+    if(dragging){
+      win.style.left=(e.clientX-ox)+'px';
+      win.style.top=(e.clientY-oy)+'px';
+    }
+    if(resizing){
+      const dx=e.clientX-ox, dy=e.clientY-oy;
+      if(dir.includes('e')) win.style.width=Math.max(320,ow+dx)+'px';
+      if(dir.includes('s')) win.style.height=Math.max(420,oh+dy)+'px';
+      if(dir.includes('w')){ win.style.width=Math.max(320,ow-dx)+'px'; win.style.left=(ol+dx)+'px'; }
+      if(dir.includes('n')){ win.style.height=Math.max(420,oh-dy)+'px'; win.style.top=(ot+dy)+'px'; }
+    }
+  });
+  document.addEventListener('mouseup',()=>{ dragging=false; resizing=false; });
+}
+// ══════════════════════════════════════════════════════════════
+// ML PANEL FUNCTIONS
+// ══════════════════════════════════════════════════════════════
+async function loadMLRevenue(){
+  document.getElementById('ml-revenue-result').innerHTML='<span style="color:var(--gray);">⏳ Running Linear Regression model...</span>';
+  Plotly.purge('chart-ml-revenue');
+  try{
+    const data=await apiFetch('/api/ml/revenue-forecast');
+    const up=data.change_percent>=0;
+    document.getElementById('ml-revenue-result').innerHTML=`
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+        <div style="background:var(--bg);padding:0.6rem 1rem;border-radius:10px;border:1px solid var(--border);">
+          <div style="font-size:0.65rem;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Model</div>
+          <div style="font-size:0.82rem;font-weight:700;color:var(--navy);">Linear Regression</div>
+        </div>
+        <div style="background:var(--bg);padding:0.6rem 1rem;border-radius:10px;border:1px solid var(--border);">
+          <div style="font-size:0.65rem;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">R² Score</div>
+          <div style="font-size:0.82rem;font-weight:700;color:var(--navy);">${data.r_squared} ${data.r_squared>0.8?'🟢 Excellent':data.r_squared>0.6?'🟡 Good':'🔴 Fair'}</div>
+        </div>
+        <div style="background:rgba(212,96,122,0.08);padding:0.6rem 1rem;border-radius:10px;border:1px solid rgba(212,96,122,0.2);">
+          <div style="font-size:0.65rem;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">Prediksi Bulan +1</div>
+          <div style="font-size:1.05rem;font-weight:800;color:var(--pink);">$${data.predicted_next_month.toLocaleString()}</div>
+        </div>
+        <div style="background:rgba(212,96,122,0.08);padding:0.6rem 1rem;border-radius:10px;border:1px solid rgba(212,96,122,0.2);">
+          <div style="font-size:0.65rem;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">+2 & +3 Months</div>
+          <div style="font-size:0.82rem;font-weight:700;color:var(--pink);">$${(data.predictions_3_months[1]||0).toLocaleString()} / $${(data.predictions_3_months[2]||0).toLocaleString()}</div>
+        </div>
+        <div style="background:var(--bg);padding:0.6rem 1rem;border-radius:10px;border:1px solid var(--border);">
+          <div style="font-size:0.65rem;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.5px;">vs Bulan Lalu</div>
+          <div style="font-size:0.82rem;font-weight:700;color:${up?'#16A34A':'#DC2626'};">${up?'↗️':'↘️'} ${up?'+':''}${data.change_percent}%</div>
+        </div>
+      </div>`;
+
+    // Plot: historical + 3-month forecast
+    const hist=data.historical;
+    const hMonths=hist.map(h=>h.month);
+    const hRevs=hist.map(h=>h.revenue);
+    // Build forecast labels (next 3 months after last)
+    const lastDate=new Date(hist[hist.length-1].month+'-01');
+    const fLabels=data.predictions_3_months.map((_,i)=>{
+      const d=new Date(lastDate); d.setMonth(d.getMonth()+i+1);
+      return d.toISOString().slice(0,7);
+    });
+    const fRevs=data.predictions_3_months;
+
+    Plotly.react('chart-ml-revenue',[
+      {x:hMonths,y:hRevs,type:'scatter',mode:'lines+markers',name:'Historical Revenue',
+       line:{color:NAVY,width:2.5},marker:{size:7,color:PINK,line:{width:2,color:'#fff'}},
+       fill:'tozeroy',fillcolor:'rgba(30,45,90,0.05)',
+       hovertemplate:'%{x}<br>$%{y:,.2f}<extra>Historical</extra>'},
+      {x:[hMonths[hMonths.length-1],...fLabels],
+       y:[hRevs[hRevs.length-1],...fRevs],
+       type:'scatter',mode:'lines+markers',name:'Forecast (+3 bulan)',
+       line:{color:PINK,width:2.5,dash:'dash'},
+       marker:{size:10,color:PINK,symbol:'diamond',line:{width:2,color:'#fff'}},
+       hovertemplate:'%{x}<br>Forecast: $%{y:,.2f}<extra>Prediksi</extra>'}
+    ],{
+      ...LAYOUT_BASE,height:260,showlegend:true,
+      legend:{orientation:'h',y:1.12,x:1,xanchor:'right',yanchor:'top',font:{size:10}},
+      yaxis:{...LAYOUT_BASE.yaxis,tickprefix:'$'},
+      xaxis:{...LAYOUT_BASE.xaxis,tickangle:-30},
+      margin:{l:75,r:30,t:25,b:60}
+    },{responsive:true,displayModeBar:false});
+  }catch(e){
+    document.getElementById('ml-revenue-result').innerHTML='<span style="color:#DC2626;">❌ Error: '+e.message+'. Pastikan backend.py sudah jalan.</span>';
+  }
+}
+
+
+async function loadMLChurn(){
+  document.getElementById('ml-churn-result').innerHTML = '<span style="color:var(--gray);">⏳ Training Random Forest...</span>';
+  document.getElementById('ml-churn-table').innerHTML = '';
+  try {
+    const data = await apiFetch('/api/ml/churn-prediction');
+    document.getElementById('ml-churn-result').innerHTML = `
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+        <div style="background:var(--bg);padding:0.7rem 1rem;border-radius:10px;border:1px solid var(--border);">
+          <div style="font-size:0.68rem;color:var(--gray);font-weight:600;text-transform:uppercase;">Model</div>
+          <div style="font-size:0.85rem;font-weight:700;color:var(--navy);">Random Forest</div>
+        </div>
+        <div style="background:var(--bg);padding:0.7rem 1rem;border-radius:10px;border:1px solid var(--border);">
+          <div style="font-size:0.68rem;color:var(--gray);font-weight:600;text-transform:uppercase;">Akurasi</div>
+          <div style="font-size:0.85rem;font-weight:700;color:var(--green);">${data.accuracy_pct}%</div>
+        </div>
+        <div style="background:rgba(240,168,48,0.08);padding:0.7rem 1rem;border-radius:10px;border:1px solid rgba(240,168,48,0.25);">
+          <div style="font-size:0.68rem;color:var(--gray);font-weight:600;text-transform:uppercase;">Diprediksi Churn</div>
+          <div style="font-size:1.1rem;font-weight:800;color:#D97706;">${data.predicted_churn} customer (${data.churn_rate_pct}%)</div>
+        </div>
+        <div style="background:rgba(46,196,160,0.08);padding:0.7rem 1rem;border-radius:10px;border:1px solid rgba(46,196,160,0.25);">
+          <div style="font-size:0.68rem;color:var(--gray);font-weight:600;text-transform:uppercase;">Diprediksi Retain</div>
+          <div style="font-size:1.1rem;font-weight:800;color:var(--green);">${data.predicted_retain} customer</div>
+        </div>
+      </div>
+      <div style="font-size:0.72rem;color:var(--gray);">Feature importance: ${Object.entries(data.feature_importance).map(([k,v])=>k+': '+v).join(' | ')}</div>
+    `;
+    // At-risk table
+    if(data.at_risk_customers.length){
+      document.getElementById('ml-churn-table').innerHTML = `
+        <div class="sec-label">⚠️ Top ${data.at_risk_customers.length} Customer Berisiko Churn</div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th>Customer</th><th>Email</th><th>Recency (days)</th><th>Rentals</th><th>Spent ($)</th><th>Churn Probability</th>
+            </tr></thead>
+            <tbody>${data.at_risk_customers.map(c=>`<tr>
+              <td><strong>${c.name}</strong></td>
+              <td style="font-size:0.75rem;">${c.email}</td>
+              <td>${c.recency_days}d</td>
+              <td>${c.frequency}</td>
+              <td>$${c.monetary.toFixed(2)}</td>
+              <td><span class="seg-badge" style="background:rgba(220,38,38,${c.churn_probability});color:${c.churn_probability>0.7?'#fff':'#7A0000'};">
+                ${(c.churn_probability*100).toFixed(0)}%
+              </span></td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>`;
+    }
+  } catch(e) {
+    document.getElementById('ml-churn-result').innerHTML = '<span style="color:#DC2626;">❌ Error: '+e.message+'. Pastikan backend_v2.py dan scikit-learn sudah terinstall.</span>';
+  }
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// PERSIST THEME — simpan ke localStorage, load saat buka ulang
+// ══════════════════════════════════════════════════════════════
+function saveThemeToStorage(){
+  try{
+    const root=document.documentElement;
+    const vars=['--bg','--white','--border','--navy','--navy2','--navy3','--pink','--pink2','--slate','--gray'];
+    const css={};
+    vars.forEach(v=>css[v]=getComputedStyle(root).getPropertyValue(v).trim());
+    const state={
+      css, NAVY, PINK,
+      SEG_COLORS:{...SEG_COLORS}, TIER_COLORS:[...TIER_COLORS],
+      genreCustomColors: window.genreCustomColors||null,
+      chartTypes:{
+        genre:     window.currentGenreChartType||'bar',
+        monthly:   window.currentMonthlyChartType||'line',
+        topcust:   window.currentTopCustChartType||'horizontal_bar',
+        geo:       window.currentGeoChartType||'horizontal_bar',
+        freq:      window.currentFreqChartType||'histogram',
+        dur:       window.currentDurChartType||'bar',
+        segDonut:  window.currentSegDonutType||'pie',
+        segBar:    window.currentSegBarType||'bar',
+        tierDonut: window.currentTierDonutType||'pie',
+        tierRev:   window.currentTierRevType||'bar',
+      },
+      bgImage: document.body.style.backgroundImage||'',
+      bgSize: document.body.style.backgroundSize||''
+    };
+    localStorage.setItem('dashboardTheme', JSON.stringify(state));
+  } catch(e){ console.warn('saveTheme error:', e); }
+}
+
+function loadThemeFromStorage(){
+  try{
+    const raw=localStorage.getItem('dashboardTheme');
+    if(!raw) return false;
+    const state=JSON.parse(raw);
+    const root=document.documentElement;
+    if(state.css) Object.entries(state.css).forEach(([k,v])=>{ if(v) root.style.setProperty(k,v); });
+    if(state.NAVY) NAVY=state.NAVY;
+    if(state.PINK) PINK=state.PINK;
+    if(state.SEG_COLORS) SEG_COLORS={...state.SEG_COLORS};
+    if(state.TIER_COLORS) TIER_COLORS=[...state.TIER_COLORS];
+    if(state.genreCustomColors) window.genreCustomColors=state.genreCustomColors;
+    if(state.chartTypes){
+      window.currentGenreChartType=state.chartTypes.genre||'bar';
+      window.currentMonthlyChartType=state.chartTypes.monthly||'line';
+      window.currentTopCustChartType=state.chartTypes.topcust||'horizontal_bar';
+      window.currentGeoChartType=state.chartTypes.geo||'horizontal_bar';
+      window.currentFreqChartType=state.chartTypes.freq||'histogram';
+      window.currentDurChartType=state.chartTypes.dur||'bar';
+      window.currentSegDonutType=state.chartTypes.segDonut||'pie';
+      window.currentSegBarType=state.chartTypes.segBar||'bar';
+      window.currentTierDonutType=state.chartTypes.tierDonut||'pie';
+      window.currentTierRevType=state.chartTypes.tierRev||'bar';
+    }
+    if(state.bgImage) document.body.style.backgroundImage=state.bgImage;
+    if(state.bgSize) document.body.style.backgroundSize=state.bgSize;
+    return true;
+  } catch(e){ console.warn('loadTheme error:', e); return false; }
+}
+
+// ══════════════════════════════════════════════════════════════
+// EXPORT CSV
+// ══════════════════════════════════════════════════════════════
+async function exportCSV(dataset, month, customerName){
+  let rows=[], filename='data.csv', previewInfo='';
+
+  if(dataset==='monthly'){
+    filename='revenue_bulanan.csv';
+    rows=[['Month','Revenue','Transactions','Active Customers'],
+      ...(RAW_MONTHLY||[]).map(d=>[d.label,d.revenue,d.transactions||'',d.active_customers||''])];
+    previewInfo = `📊 Revenue bulanan — ${rows.length-1} baris data`;
+
+  } else if(dataset==='customers'){
+    filename='customers.csv';
+    rows=[['ID','Name','Email','Country','Active','Rentals','Revenue','Avg Payment','Avg Duration'],
+      ...(RAW_CUSTOMERS||[]).map(d=>[d.id,d.name,d.email,d.country,d.active?'Yes':'No',d.rental_count,d.total_revenue,d.avg_payment,d.avg_duration])];
+    previewInfo = `👥 Semua customer — ${rows.length-1} customers`;
+
+  } else if(dataset==='rfm'){
+    filename='rfm_segmentation.csv';
+    rows=[['ID','Name','Email','Recency Days','Frequency','Monetary','Segment','Last Rental'],
+      ...(RAW_RFM||[]).map(d=>[d.id,d.name,d.email,d.recency_days,d.frequency,d.monetary,d.segment,d.last_rental])];
+    previewInfo = `🏆 RFM Segmentation — ${rows.length-1} customers`;
+
+  } else if(dataset==='genre'){
+    filename='genre_popularity.csv';
+    rows=[['Genre','Rental Count'],
+      ...(RAW_GENRE||[]).map(d=>[d.genre,d.count])];
+    previewInfo = `🎬 Genre popularity — ${rows.length-1} genres`;
+
+  } else if(dataset==='genre_monthly'){
+    filename='genre_per_bulan.csv';
+    rows=[['Month','Genre','Rental Count'],
+      ...(window.RAW_GENRE_MONTHLY||[]).map(d=>[d.label,d.genre,d.rental_count])];
+    previewInfo = `📅 Genre per bulan — ${rows.length-1} baris`;
+
+  } else if(dataset==='customer_history'){
+    const cust = customerName
+      ? (RAW_CUSTOMERS||[]).find(c=>c.name.toLowerCase().includes(customerName.toLowerCase()))
+      : null;
+   if(!cust){ showToast('❌ Customer tidak ditemukan'); return; }
+  
+    // Fetch rental history dari backend
+    try {
+      const history = await apiFetch('/api/customer-history/' + cust.id);
+      filename = `history_${cust.name.replace(/ /g,'_')}.csv`;
+      rows = [['Rental Date','Return Date','Film Title','Genre','Amount ($)'],
+        ...history.map(h=>[h.rental_date, h.return_date||'Not returned', h.film_title, h.genre, parseFloat(h.amount).toFixed(2)])];
+      previewInfo = `👤 ${cust.name} — ${history.length} rental transactions`;
+    } catch(e) {
+      showToast('❌ Gagal fetch history: ' + e.message); return;
+    }
+
+  } else if(dataset==='rentals_by_month'||dataset==='rentals_march'){
+    const allData = window.RAW_GENRE_MONTHLY || [];
+    const months = month ? (Array.isArray(month) ? month : [month]) : [];
+    let filtered = allData;
+    if(months.length > 0){
+      filtered = allData.filter(d => months.some(m => {
+        const mLower = m.toLowerCase();
+        const labelLower = (d.label||'').toLowerCase();
+        const monthStr = (d.month||'');
+        return monthStr.includes(m) || labelLower.includes(mLower);
+      }));
+    }
+    const MONTH_NAMES = {'01':'jan','02':'feb','03':'mar','04':'apr','05':'mei','06':'jun','07':'jul','08':'agu','09':'sep','10':'okt','11':'nov','12':'des'};
+    const monthLabel = months.length > 0
+      ? months.map(m=>{ const p=m.split('-'); return MONTH_NAMES[p[1]]||m; }).join('_')
+      : 'semua_bulan';
+    filename = `transaksi_${monthLabel}.csv`;
+    const dataToUse = filtered.length ? filtered : allData;
+    rows = [['Month','Genre','Rental Count'],
+      ...dataToUse.map(d=>[d.label,d.genre,d.rental_count])];
+    previewInfo = `📅 Transaksi ${monthLabel} — ${rows.length-1} baris`;
+    if(!filtered.length && months.length > 0) showToast('⚠️ Bulan tidak ditemukan, tampil semua');
+
+  } else if(dataset==='loyal_region'){
+    filename='loyal_customer_by_region.csv';
+    rows=[['Country','Loyal Count','Champions Count','Revenue ($)','Avg Revenue per Loyal ($)'],
+      ...(window.RAW_RFM_BY_REGION||[]).sort((a,b)=>b.loyal_count-a.loyal_count).map(d=>[
+        d.country, d.loyal_count, d.champions_count||0,
+        parseFloat(d.loyal_revenue||0).toFixed(2),
+        d.loyal_count>0?(parseFloat(d.loyal_revenue||0)/d.loyal_count).toFixed(2):'0'
+      ])];
+    previewInfo = `🌍 Loyal by region — ${rows.length-1} negara`;
+  }
+
+  if(!rows.length){ showToast('❌ Tidak ada data untuk diexport'); return; }
+
+  // Build CSV blob
+  const csvContent = rows.map(r=>r.map(v=>'"'+String(v===null||v===undefined?'':v).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csvContent],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+
+  // Tampilkan preview bubble + tombol download di chat
+  const msgId = 'csv_'+Date.now();
+  const msgs = document.getElementById('chatMsgs');
+  msgs.innerHTML += `
+    <div class="msg ai" id="${msgId}">
+      <div class="msg-avatar">🤖</div>
+      <div>
+        <div class="msg-bubble" style="min-width:240px;">
+          <div style="font-size:0.78rem;color:var(--slate);margin-bottom:0.6rem;">${previewInfo}</div>
+          <div style="font-size:0.75rem;color:var(--gray);margin-bottom:0.75rem;">📄 File: <code style="background:#EEF1FB;padding:2px 6px;border-radius:4px;font-size:0.72rem;">${filename}</code></div>
+          <a href="${url}" download="${filename}" onclick="setTimeout(()=>URL.revokeObjectURL('${url}'),2000)"
+            style="display:inline-flex;align-items:center;gap:0.4rem;background:linear-gradient(135deg,var(--navy),var(--navy3));color:#fff;padding:0.5rem 1rem;border-radius:8px;font-size:0.78rem;font-weight:600;text-decoration:none;transition:opacity 0.2s;"
+            onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+            📥 Download CSV
+          </a>
+        </div>
+        <span class="msg-time">${getTime()}</span>
+      </div>
+    </div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+}
+// ══════════════════════════════════════════════════════════════
+// Patch renderSegDonut — support bar/pie/donut type switching
+// ══════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════
+// LOYAL CUSTOMER BY REGION
+// ════════════════════════════════════════════════════════
+function renderLoyalRegion(){
+  const data = window.RAW_RFM_BY_REGION || [];
+  if(!data.length){ return; }
+  const ct = window.currentLoyalRegionType || 'bar';
+  const top = [...data].sort((a,b)=>b.loyal_count-a.loyal_count).slice(0,12);
+
+  // Chart 1: Customer count
+  if(ct==='pie'||ct==='donut'){
+    Plotly.react('chart-loyal-region',[{
+      labels:top.map(d=>d.country), values:top.map(d=>parseInt(d.loyal_count)),
+      type:'pie', hole:ct==='donut'?0.5:0,
+      marker:{line:{color:'#fff',width:1.5}},
+      textinfo:'label+percent', textfont:{size:10},
+      hovertemplate:'<b>%{label}</b><br>Loyal customers: %{value}<extra></extra>'
+    }],{...LAYOUT_BASE,height:320,showlegend:true,
+      legend:{orientation:'v',yanchor:'middle',y:0.5,xanchor:'left',x:1.02,font:{size:9}}
+    },{responsive:true,displayModeBar:false});
+  } else {
+    Plotly.react('chart-loyal-region',[{
+      x:top.map(d=>parseInt(d.loyal_count)), y:top.map(d=>d.country),
+      type:'bar', orientation:'h',
+      marker:{color:top.map((_,i)=>[SEG_COLORS.Champions,SEG_COLORS.Loyal,'#F0A830','#10B981','#8B5CF6','#0099CC','#FF6B35','#F43F5E','#D97706','#065F46','#3D1A7A','#7A2E00'][i%12]), line:{width:0}},
+      text:top.map(d=>d.loyal_count), textposition:'outside', textfont:{size:9},
+      hovertemplate:'<b>%{y}</b><br>Loyal+Champions: %{x}<extra></extra>'
+    }],{...LAYOUT_BASE,height:320,
+      margin:{l:120,r:60,t:15,b:40},
+      xaxis:{...LAYOUT_BASE.xaxis,title:{text:'Loyal + Champions Customers',font:{size:11}}},
+      yaxis:{...LAYOUT_BASE.yaxis,title:'',autorange:'reversed',automargin:true,tickfont:{size:10}}
+    },{responsive:true,displayModeBar:false});
+  }
+
+  // Chart 2: Revenue from loyal customers
+  const topRev = [...data].sort((a,b)=>parseFloat(b.loyal_revenue)-parseFloat(a.loyal_revenue)).slice(0,12);
+  Plotly.react('chart-loyal-revenue-region',[{
+    x:topRev.map(d=>parseFloat(d.loyal_revenue)), y:topRev.map(d=>d.country),
+    type:'bar', orientation:'h',
+    marker:{color:topRev.map((_,i)=>[PINK,NAVY,'#F0A830','#10B981','#8B5CF6','#0099CC','#FF6B35','#F43F5E','#D97706','#065F46','#3D1A7A','#7A2E00'][i%12]),line:{width:0}},
+    text:topRev.map(d=>'$'+parseFloat(d.loyal_revenue).toFixed(0)), textposition:'outside', textfont:{size:9},
+    hovertemplate:'<b>%{y}</b><br>Revenue: $%{x:,.2f}<extra></extra>'
+  }],{...LAYOUT_BASE,height:320,
+    margin:{l:120,r:80,t:15,b:40},
+    xaxis:{...LAYOUT_BASE.xaxis,title:{text:'Revenue ($)',font:{size:11}},tickprefix:'$'},
+    yaxis:{...LAYOUT_BASE.yaxis,title:'',autorange:'reversed',automargin:true,tickfont:{size:10}}
+  },{responsive:true,displayModeBar:false});
+}
+const _origLoadAllData = loadAllData;
+loadAllData = async function() {
+  await _origLoadAllData();
+  // Re-map: tambahkan field month jika belum ada
+  if (window.RAW_GENRE_MONTHLY && window.RAW_GENRE_MONTHLY.length > 0) {
+    if (!window.RAW_GENRE_MONTHLY[0].month) {
+      // Fetch ulang untuk dapat field month
+      try {
+        const raw = await apiFetch('/api/genre-monthly');
+        window.RAW_GENRE_MONTHLY = (raw||[]).map(d => ({
+          label:        d.label,
+          month:        d.month || '',   // "2005-05" format YYYY-MM
+          genre:        d.genre,
+          rental_count: parseInt(d.rental_count)
+        }));
+      } catch(e) { console.warn('genre-monthly re-fetch failed', e); }
+    }
+  }
+};
+ 
+ 
+// ── FIX 2: (merged into main exportCSV above) ──
+function exportCSV_DISABLED(dataset, month) {
+  let rows = [], filename = 'data.csv';
+ 
+  if (dataset === 'monthly') {
+    filename = 'revenue_bulanan.csv';
+    rows = [['Month','Revenue','Transactions','Active Customers'],
+      ...(RAW_MONTHLY||[]).map(d=>[d.label,d.revenue,d.transactions||'',d.active_customers||''])];
+ 
+  } else if (dataset === 'customers') {
+    filename = 'customers.csv';
+    rows = [['ID','Name','Email','Country','Active','Rentals','Revenue','Avg Payment','Avg Duration'],
+      ...(RAW_CUSTOMERS||[]).map(d=>[d.id,d.name,d.email,d.country,d.active?'Yes':'No',
+        d.rental_count,d.total_revenue,d.avg_payment,d.avg_duration])];
+ 
+  } else if (dataset === 'rfm') {
+    filename = 'rfm_segmentation.csv';
+    rows = [['ID','Name','Email','Recency Days','Frequency','Monetary','Segment','Last Rental'],
+      ...(RAW_RFM||[]).map(d=>[d.id,d.name,d.email,d.recency_days,d.frequency,d.monetary,d.segment,d.last_rental])];
+ 
+  } else if (dataset === 'genre') {
+    filename = 'genre_popularity.csv';
+    rows = [['Genre','Rental Count'],
+      ...(RAW_GENRE||[]).map(d=>[d.genre,d.count])];
+ 
+  } else if (dataset === 'genre_monthly') {
+    filename = 'genre_per_bulan.csv';
+    rows = [['Month','Genre','Rental Count'],
+      ...(window.RAW_GENRE_MONTHLY||[]).map(d=>[d.label,d.genre,d.rental_count])];
+ 
+  } else if (dataset === 'rentals_by_month' || dataset === 'rentals_march') {
+    const allData = window.RAW_GENRE_MONTHLY || [];
+ 
+    // Normalisasi input month ke array
+    const months = month ? (Array.isArray(month) ? month : [month]) : [];
+ 
+    // Map nama bulan → angka 2 digit
+    const MONTH_MAP = {
+      january:'01', jan:'01',
+      february:'02', feb:'02',
+      march:'03', mar:'03', maret:'03',
+      april:'04', apr:'04',
+      may:'05', mei:'05',
+      june:'06', jun:'06', juni:'06',
+      july:'07', jul:'07', juli:'07',
+      august:'08', aug:'08', agu:'08', agustus:'08',
+      september:'09', sep:'09',
+      october:'10', oct:'10', okt:'10', oktober:'10',
+      november:'11', nov:'11',
+      december:'12', dec:'12', des:'12', desember:'12'
+    };
+ 
+    let filtered = [];
+    if (months.length > 0) {
+      filtered = allData.filter(d => {
+        const rowMonth = (d.month || '').trim(); // "2005-05"
+        return months.some(m => {
+          const mStr = String(m).trim().toLowerCase();
+          // Exact YYYY-MM → strict match
+          if (/^\d{4}-\d{2}$/.test(mStr)) return rowMonth === mStr;
+          // Nama bulan (mar, april, dll) → cari MM-nya
+          const mm = MONTH_MAP[mStr];
+          if (mm) return rowMonth.endsWith('-' + mm);
+          // Angka bulan saja (3, 04, dll)
+          if (/^\d{1,2}$/.test(mStr)) return rowMonth.endsWith('-' + mStr.padStart(2,'0'));
+          return false;
+        });
+      });
+    } else {
+      filtered = allData; // kosong = semua bulan
+    }
+ 
+    if (months.length > 0 && filtered.length === 0) {
+      // Kasih tahu bulan mana yang tersedia
+      const available = [...new Set(allData.map(d => d.label))].join(', ');
+      showToast('Bulan tidak ditemukan. Data tersedia: ' + available);
+      return;
+    }
+ 
+    const MONTH_NAMES = {
+      '01':'jan','02':'feb','03':'mar','04':'apr','05':'mei','06':'jun',
+      '07':'jul','08':'agu','09':'sep','10':'okt','11':'nov','12':'des'
+    };
+    const monthLabel = months.length > 0
+      ? months.map(m => {
+          const mStr = String(m).toLowerCase();
+          if (/^\d{4}-\d{2}$/.test(mStr)) {
+            const mm = mStr.split('-')[1];
+            return MONTH_NAMES[mm] || mm;
+          }
+          return MONTH_MAP[mStr] ? (MONTH_NAMES[MONTH_MAP[mStr]] || mStr) : mStr;
+        }).join('_')
+      : 'semua_bulan';
+ 
+    filename = 'transaksi_' + monthLabel + '.csv';
+    rows = [['Month','Genre','Rental Count'],
+      ...filtered.map(d => [d.label, d.genre, d.rental_count])];
+ 
+  } else if (dataset === 'loyal_region') {
+    filename = 'loyal_customer_by_region.csv';
+    rows = [['Country','Loyal Count','Champions Count','Revenue ($)','Avg Revenue per Loyal ($)'],
+      ...(window.RAW_RFM_BY_REGION||[]).sort((a,b)=>b.loyal_count-a.loyal_count).map(d=>[
+        d.country, d.loyal_count, d.champions_count||0,
+        parseFloat(d.loyal_revenue||0).toFixed(2),
+        d.loyal_count>0 ? (parseFloat(d.loyal_revenue||0)/d.loyal_count).toFixed(2) : '0'
+      ])];
+  }
+ 
+  if (!rows.length) { showToast('Tidak ada data untuk diexport.'); return; }
+  const csv = rows.map(r =>
+    r.map(v => '"' + String(v===null||v===undefined?'':v).replace(/"/g,'""') + '"').join(',')
+  ).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast('CSV "' + filename + '" didownload (' + (rows.length-1) + ' baris).');
+}
+ 
+ 
+// ── FIX 3: Tukar posisi chart di loyalty tab — wrap segDonut+segBar dan tierDonut+tierRev ──
+
+
+ 
+ 
+// ── FIX 4: AI prediksi revenue — fetch ML endpoint beneran ──
+// Tambah handler khusus di sendMessage untuk deteksi intent prediksi
+const _origSendMessage = sendMessage;
+sendMessage = async function() {
+  const input = document.getElementById('chatInput');
+  const text = (input.value || '').trim().toLowerCase();
+ 
+  // Deteksi intent ML revenue forecast
+  const isMLRevenue = /predik|forecast|bulan depan|next month|revenue.*predik|predik.*revenue/.test(text);
+  const isMLChurn = /churn|kabur|tidak kembali|at.?risk.*predik|predik.*churn/.test(text);
+ 
+  if (isMLRevenue) {
+    input.value = '';
+    addUserMsg(document.getElementById('chatInput').value || text);
+    const tid = addTyping();
+    try {
+      const data = await apiFetch('/api/ml/revenue-forecast');
+      document.getElementById(tid)?.remove();
+      const msg = `Hasil Revenue Forecast (Linear Regression):
+- Prediksi bulan depan: $${parseFloat(data.predicted_next_month||0).toLocaleString('en-US',{minimumFractionDigits:2})}
+- R² Score: ${data.r2_score} (${data.r2_score >= 0.9 ? 'Excellent' : data.r2_score >= 0.7 ? 'Good' : 'Fair'})
+- Perubahan vs bulan lalu: ${data.change_percent >= 0 ? '+' : ''}${parseFloat(data.change_percent||0).toFixed(1)}%
+Data dari model ML endpoint beneran, bukan estimasi.`;
+      addAiMsg(msg);
+      chatHistory.push({role:'user', content: text});
+      chatHistory.push({role:'assistant', content: msg});
+      setTab('ml');
+    } catch(e) {
+      document.getElementById(tid)?.remove();
+      addAiMsg('Gagal fetch ML endpoint: ' + e.message + '. Pastikan backend.py jalan dan scikit-learn terinstall.');
+    }
+    document.getElementById('sendBtn').disabled = false;
+    return;
+  }
+ 
+  if (isMLChurn) {
+    input.value = '';
+    const tid = addTyping();
+    try {
+      const data = await apiFetch('/api/ml/churn-prediction');
+      document.getElementById(tid)?.remove();
+      const top5 = (data.at_risk_customers||[]).slice(0,5);
+      // Simpan ke context supaya AI bisa referensi data ini
+      window._lastChurnData = { total_at_risk: data.total_at_risk || top5.length, top5 };
+      const list = top5.map((c,i) => `${i+1}. ${c.name} — churn probability ${(c.churn_probability*100).toFixed(0)}%`).join('\n');
+      const msg = `Hasil Churn Prediction (Random Forest):
+Total customer at-risk: ${data.total_at_risk || top5.length}
+Top 5 paling berisiko:
+${list}
+Data dari model ML endpoint beneran.`;
+      addAiMsg(msg);
+      chatHistory.push({role:'user', content: text});
+      chatHistory.push({role:'assistant', content: msg});
+      setTab('ml');
+    } catch(e) {
+      document.getElementById(tid)?.remove();
+      addAiMsg('Gagal fetch churn endpoint: ' + e.message);
+    }
+    document.getElementById('sendBtn').disabled = false;
+    return;
+  }
+ 
+  // ══════════════════════════════════════════════════════════
+  // CREATE CHART INTENT — buat chart baru di dashboard
+  // Kata kunci: "create chart", "buat chart", "tambahkan chart", "add chart"
+  // ══════════════════════════════════════════════════════════
+  const isCreateChart = /create.?chart|buat.?chart|tambah.?chart|add.?chart|bikin.?chart|new.?chart|chart.?baru/.test(text);
+
+  if (isCreateChart) {
+    input.value = '';
+    addUserMsg(text);
+    const tid = addTyping();
+
+    // Deteksi jenis chart yang diminta
+    const wantDuration   = /duration|lama|berapa.?hari|dvd.*hari|hari.*dvd/.test(text);
+    const wantStore      = /store|toko|cabang/.test(text);
+    const wantGenreMonth = /genre.*bulan|bulan.*genre|genre.*month|monthly.*genre/.test(text);
+    const wantRevMonth   = /revenue.*bulan|monthly.*revenue|revenue.*month|pendapatan.*bulan/.test(text);
+    const wantGeo        = /geo|negara|country|wilayah|region/.test(text);
+
+    document.getElementById(tid)?.remove();
+
+    // Pilih chart type berdasarkan keyword
+    let chartType = 'genre_monthly'; // default
+    if (wantDuration)   chartType = 'duration';
+    else if (wantStore) chartType = 'store';
+    else if (wantRevMonth) chartType = 'revenue_monthly';
+    else if (wantGeo)   chartType = 'geography';
+    else if (wantGenreMonth) chartType = 'genre_monthly';
+
+    const chartConfigs = {
+      duration: {
+        id: 'ai-chart-duration-' + Date.now(),
+        title: '📅 Rental Duration Distribution',
+        sub: 'How long do customers keep DVDs? (AI Generated)',
+        tab: 'behavior',
+        endpoint: '/api/duration',
+        render: (data, divId) => {
+          Plotly.newPlot(divId,
+            [{ x: data.map(d=>d.duration_days+'d'), y: data.map(d=>d.rental_count),
+               type:'bar', marker:{color:PINK, line:{width:0}},
+               text: data.map(d=>d.rental_count), textposition:'outside', textfont:{size:9,color:SLATE},
+               hovertemplate:'<b>%{x}</b><br>Rentals: %{y}<extra></extra>' }],
+            { ...LAYOUT_BASE, height:280, margin:{l:50,r:20,t:20,b:40},
+              xaxis:{...LAYOUT_BASE.xaxis, title:{text:'Duration (days)',font:{size:11}}},
+              yaxis:{...LAYOUT_BASE.yaxis, title:{text:'Rental Count',font:{size:11}}} },
+            {responsive:true, displayModeBar:false});
+        }
+      },
+      store: {
+        id: 'ai-chart-store-' + Date.now(),
+        title: '🏪 Store Comparison',
+        sub: 'Revenue & customers per store (AI Generated)',
+        tab: 'overview',
+        endpoint: '/api/store',
+        render: (data, divId) => {
+          Plotly.newPlot(divId,
+            [{ x: data.map(d=>d.store_label), y: data.map(d=>parseFloat(d.revenue)),
+               type:'bar', name:'Revenue', marker:{color:NAVY, line:{width:0}},
+               text: data.map(d=>'$'+parseFloat(d.revenue).toLocaleString()), textposition:'outside', textfont:{size:10,color:SLATE},
+               hovertemplate:'<b>%{x}</b><br>Revenue: $%{y:,.2f}<extra></extra>' },
+             { x: data.map(d=>d.store_label), y: data.map(d=>d.unique_customers),
+               type:'bar', name:'Customers', marker:{color:PINK, line:{width:0}}, yaxis:'y2',
+               hovertemplate:'<b>%{x}</b><br>Customers: %{y}<extra></extra>' }],
+            { ...LAYOUT_BASE, height:280, barmode:'group', margin:{l:70,r:70,t:20,b:40},
+              yaxis:{...LAYOUT_BASE.yaxis, title:{text:'Revenue ($)',font:{size:11}}, tickprefix:'$'},
+              yaxis2:{overlaying:'y', side:'right', title:{text:'Customers',font:{size:11}}, showgrid:false},
+              legend:{orientation:'h', yanchor:'bottom', y:1.02, xanchor:'right', x:1, font:{size:10}} },
+            {responsive:true, displayModeBar:false});
+        }
+      },
+      genre_monthly: {
+        id: 'ai-chart-genremonth-' + Date.now(),
+        title: '🎬 Genre Trend per Month',
+        sub: 'Top genres over time (AI Generated)',
+        tab: 'behavior',
+        endpoint: '/api/genre-monthly',
+        render: (data, divId) => {
+          // Group by genre
+          const genres = [...new Set(data.map(d=>d.genre))].slice(0,5);
+          const months = [...new Set(data.map(d=>d.label))];
+          const colors = [PINK, NAVY, '#F0A830', '#10B981', '#8B5CF6'];
+          const traces = genres.map((g,i) => ({
+            x: months,
+            y: months.map(m => { const r=data.find(d=>d.genre===g&&d.label===m); return r?r.rental_count:0; }),
+            type:'scatter', mode:'lines+markers', name:g,
+            line:{color:colors[i]||SLATE, width:2},
+            marker:{color:colors[i]||SLATE, size:5},
+            hovertemplate:'<b>'+g+'</b><br>%{x}: %{y} rentals<extra></extra>'
+          }));
+          Plotly.newPlot(divId, traces,
+            { ...LAYOUT_BASE, height:300, margin:{l:50,r:20,t:20,b:60},
+              xaxis:{...LAYOUT_BASE.xaxis, tickangle:-30, tickfont:{size:9}},
+              yaxis:{...LAYOUT_BASE.yaxis, title:{text:'Rental Count',font:{size:11}}},
+              legend:{orientation:'h', yanchor:'bottom', y:1.02, xanchor:'right', x:1, font:{size:9}} },
+            {responsive:true, displayModeBar:false});
+        }
+      },
+      revenue_monthly: {
+        id: 'ai-chart-revmonth-' + Date.now(),
+        title: '💰 Monthly Revenue Bar Chart',
+        sub: 'Revenue per bulan dari database (AI Generated)',
+        tab: 'overview',
+        endpoint: '/api/monthly',
+        render: (data, divId) => {
+          Plotly.newPlot(divId,
+            [{ x: data.map(d=>d.label), y: data.map(d=>parseFloat(d.revenue)),
+               type:'bar', marker:{color:data.map((_,i)=>i===data.length-1?PINK:NAVY), line:{width:0}},
+               text: data.map(d=>'$'+parseFloat(d.revenue).toLocaleString()), textposition:'outside', textfont:{size:9,color:SLATE},
+               hovertemplate:'<b>%{x}</b><br>Revenue: $%{y:,.2f}<extra></extra>' }],
+            { ...LAYOUT_BASE, height:280, margin:{l:70,r:20,t:20,b:60},
+              xaxis:{...LAYOUT_BASE.xaxis, tickangle:-30, tickfont:{size:9}},
+              yaxis:{...LAYOUT_BASE.yaxis, title:{text:'Revenue ($)',font:{size:11}}, tickprefix:'$'} },
+            {responsive:true, displayModeBar:false});
+        }
+      },
+      geography: {
+        id: 'ai-chart-geo-' + Date.now(),
+        title: '🌍 Customer by Country',
+        sub: 'Top countries dengan customer terbanyak (AI Generated)',
+        tab: 'overview',
+        endpoint: '/api/geography',
+        render: (data, divId) => {
+          const top = data.slice(0,10);
+          Plotly.newPlot(divId,
+            [{ x: top.map(d=>d.customer_count), y: top.map(d=>d.country),
+               type:'bar', orientation:'h',
+               marker:{color:top.map((_,i)=>i===0?PINK:NAVY), line:{width:0}},
+               text: top.map(d=>d.customer_count), textposition:'outside', textfont:{size:9,color:SLATE},
+               hovertemplate:'<b>%{y}</b><br>Customers: %{x}<extra></extra>' }],
+            { ...LAYOUT_BASE, height:320, margin:{l:130,r:50,t:20,b:40},
+              xaxis:{...LAYOUT_BASE.xaxis, title:{text:'Customers',font:{size:11}}},
+              yaxis:{...LAYOUT_BASE.yaxis, automargin:true} },
+            {responsive:true, displayModeBar:false});
+        }
+      }
+    };
+
+    const cfg = chartConfigs[chartType];
+
+    try {
+      const rawData = await apiFetch(cfg.endpoint);
+
+      // Buat section container baru
+      const section = document.createElement('div');
+      section.setAttribute('data-section', 'ai-generated-' + cfg.id);
+      section.style.cssText = 'animation:fadeUp 0.4s ease;';
+      section.innerHTML = `
+        <div class="sec-label" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>✨ AI Generated Chart</span>
+          <button onclick="this.closest('[data-section]').remove(); showToast('🗑️ Chart dihapus');"
+            style="background:none;border:1px solid var(--border);border-radius:6px;padding:2px 10px;font-size:0.72rem;color:var(--gray);cursor:pointer;">✕ Hapus</button>
+        </div>
+        <div class="chart-wrap" data-chart="${cfg.id}">
+          <div class="chart-title">${cfg.title}</div>
+          <div class="chart-sub">${cfg.sub}</div>
+          <div id="${cfg.id}" style="height:320px;"></div>
+        </div>`;
+
+      // Inject ke tab yang tepat
+      const panel = document.getElementById('panel-' + cfg.tab);
+      if (panel) {
+        panel.appendChild(section);
+        setTab(cfg.tab);
+        setTimeout(() => { cfg.render(rawData, cfg.id); }, 200);
+
+        const msg = `✅ Chart baru **"${cfg.title}"** berhasil dibuat dan ditambahkan ke tab **${cfg.tab.charAt(0).toUpperCase()+cfg.tab.slice(1)}**!\n\nData diambil langsung dari database. Scroll ke bawah untuk melihatnya. Kamu bisa hapus chart ini dengan tombol ✕ di pojok kanan.`;
+        addAiMsg(msg);
+        chatHistory.push({role:'user', content: text});
+        chatHistory.push({role:'assistant', content: msg});
+        showToast('✨ Chart baru berhasil dibuat!');
+      } else {
+        addAiMsg('❌ Tab tidak ditemukan: ' + cfg.tab);
+      }
+    } catch(e) {
+      addAiMsg('❌ Gagal membuat chart: ' + e.message + '. Pastikan backend berjalan.');
+    }
+
+    document.getElementById('sendBtn').disabled = false;
+    return;
+  }
+
+  // Kalau bukan ML intent, lanjut ke original sendMessage
+  _origSendMessage();
+};
+ 
+ 
+// ── FIX 5: chatbot window tidak crop — pastikan selalu dalam viewport ──
+(function fixChatBounds() {
+  const win = document.getElementById('chatWindow');
+  if (!win) return;
+ 
+  // Set ukuran default lebih kecil supaya tidak crop
+  if (!win.style.width) win.style.width = '380px';
+  if (!win.style.height) win.style.height = '520px';
+  win.style.maxWidth = 'calc(100vw - 40px)';
+  win.style.maxHeight = 'calc(100vh - 120px)';
+ 
+  // Setelah drag, pastikan tetap dalam viewport
+  document.addEventListener('mouseup', () => {
+    const r = win.getBoundingClientRect();
+    if (r.left < 0) win.style.left = '10px';
+    if (r.top < 0) win.style.top = '10px';
+    if (r.right > window.innerWidth) win.style.left = (window.innerWidth - r.width - 10) + 'px';
+    if (r.bottom > window.innerHeight) win.style.top = (window.innerHeight - r.height - 10) + 'px';
+  });
+})();
+ 
+ 
+// ── FIX 6: Revenue di chatbot pakai angka dari KPI, bukan jumlah manual ──
+// Simpan KPI data global supaya AI bisa akses
+const _origRenderKPIs = renderKPIs;
+renderKPIs = async function() {
+  await _origRenderKPIs();
+  // Ambil angka dari KPI card yang sudah render
+  try {
+    const data = await apiFetch('/api/kpi');
+    if (data && data[0]) {
+      window.GLOBAL_KPI = data[0];
+    }
+  } catch(e) {}
+};
+ 
+ 
+// ── FIX 7: System prompt inject KPI real + bulan yang tersedia ──
+const _origBuildSP = typeof buildSystemPrompt === 'function' ? buildSystemPrompt : null;
+if (_origBuildSP) {
+  buildSystemPrompt = function() {
+    let prompt = _origBuildSP();
+ 
+    // Inject KPI real
+    if (window.GLOBAL_KPI) {
+      const k = window.GLOBAL_KPI;
+      const kpiInfo = `
+ANGKA KPI RESMI (gunakan ini, jangan hitung sendiri):
+- Total customers: ${k.total_customers}
+- Total revenue: $${parseFloat(k.total_revenue||0).toLocaleString('en-US',{minimumFractionDigits:2})}
+- Total rentals: ${k.total_rentals}
+- Avg revenue per rental: $${parseFloat(k.avg_revenue_per_rental||0).toFixed(2)}
+- Avg spend per customer: $${parseFloat(k.avg_spend_per_customer||0).toFixed(2)}`;
+      prompt = prompt.replace('═══ DATA CONTEXT ═══', '═══ DATA CONTEXT ═══\n' + kpiInfo);
+    }
+ 
+    // Inject bulan yang tersedia di data
+    const availMonths = [...new Set((window.RAW_GENRE_MONTHLY||[]).map(d => d.label))].join(', ');
+    if (availMonths) {
+      prompt += `\n\nBULAN YANG TERSEDIA DI DATABASE: ${availMonths}
+Jika user minta CSV bulan yang TIDAK ada di daftar ini, langsung bilang bulan tersebut tidak ada di data.
+Jangan asal bilang berhasil jika bulannya tidak tersedia.`;
+    }
+ 
+    // Inject tab aktif
+    const activeTab = document.querySelector('.tab-btn.active')?.id?.replace('tab-','') || 'overview';
+    const TAB_CHARTS = {
+      overview: 'monthly (line/bar), topcust (horizontal_bar/vertical_bar/pie/donut), geo (horizontal_bar/pie/donut)',
+      behavior: 'genre (bar/pie/donut/horizontal_bar), freq (histogram/bar/line/area), dur (bar/line/area/horizontal_bar). scatter dan cumrev tidak bisa diganti.',
+      loyalty:  'segDonut (pie/donut/bar), segBar (bar/horizontal_bar), tierDonut (pie/donut), tierRev (bar/horizontal_bar), loyalRegion (bar/pie/donut)',
+      detail:   'tidak ada chart',
+      ml:       'tidak ada chart'
+    };
+    prompt += `\n\nTAB AKTIF SEKARANG: ${activeTab}
+Chart di tab ini: ${TAB_CHARTS[activeTab] || '-'}
+Jika chart yang diminta tidak ada di tab ini, sebutkan tab yang benar dan navigateTo ke sana.`;
+ 
+    return prompt;
+  };
+}
+
+// ══════════════════════════════════════════════════════════════
+// VOICE CHAT — Speech Recognition + Text-to-Speech
+// ══════════════════════════════════════════════════════════════
+let voiceRecognition = null;
+let isRecording = false;
+let voiceSpeaking = false;
+
+function initVoice() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) { showToast('⚠️ Browser kamu tidak support voice input. Coba Chrome/Edge.'); return null; }
+  const rec = new SpeechRecognition();
+  rec.lang = 'id-ID';
+  rec.interimResults = false;
+  rec.maxAlternatives = 1;
+  rec.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    const input = document.getElementById('chatInput');
+    input.value = transcript;
+    autoResize(input);
+    stopRecording();
+    window._lastInputWasVoice = true;
+    setTimeout(() => sendMessage(), 300);
+  };
+  rec.onerror = (e) => { showToast('❌ Voice error: ' + e.error); stopRecording(); };
+  rec.onend = () => { if (isRecording) stopRecording(); };
+  return rec;
+}
+
+function toggleVoice() {
+  if (isRecording) { stopRecording(); return; }
+  voiceRecognition = initVoice();
+  if (!voiceRecognition) return;
+  try {
+    voiceRecognition.start();
+    isRecording = true;
+    const btn = document.getElementById('micBtn');
+    btn.classList.add('recording');
+    btn.title = 'Stop recording';
+    showToast('🎙️ Mulai bicara...');
+  } catch(e) { showToast('❌ Tidak bisa mulai recording'); }
+}
+
+function stopRecording() {
+  isRecording = false;
+  try { voiceRecognition?.stop(); } catch(e) {}
+  const btn = document.getElementById('micBtn');
+  if (btn) { btn.classList.remove('recording'); btn.title = 'Voice input'; }
+}
+
+function speakResponse(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  // Potong text supaya tidak terlalu panjang dibacain
+  const clean = text.replace(/[*_`#<>]/g,'').slice(0, 300);
+  const utter = new SpeechSynthesisUtterance(clean);
+  utter.lang = 'id-ID';
+  utter.rate = 1.05;
+  utter.pitch = 1;
+  // Pilih suara Indonesia kalau ada
+  const voices = window.speechSynthesis.getVoices();
+  const idVoice = voices.find(v => v.lang.startsWith('id')) || voices.find(v => v.lang.startsWith('en'));
+  if (idVoice) utter.voice = idVoice;
+  voiceSpeaking = true;
+  utter.onend = () => { voiceSpeaking = false; };
+  window.speechSynthesis.speak(utter);
+}
+
+// Auto-load voices (Chrome lazy loads)
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+
+</script>
+</body>
+</html>
