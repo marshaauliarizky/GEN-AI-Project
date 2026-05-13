@@ -507,6 +507,20 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--slate);min-
       </div>
     </div>
     <div id="ml-churn-table" style="margin-top:1rem;"></div>
+
+    <!-- TRANSFORMER TIME SERIES -->
+    <div style="margin-top:1.5rem;">
+      <div class="sec-label">Transformer Time Series</div>
+      <div class="chart-wrap">
+        <div class="chart-title">🔮 Transformer Revenue Forecast</div>
+        <div class="chart-sub">Sliding Window Attention + Ridge Regression — prediksi revenue 3 bulan ke depan</div>
+        <div id="ml-transformer-result" style="padding:1rem;color:var(--gray);font-size:0.83rem;">
+          <button onclick="loadMLTransformer()" style="padding:0.5rem 1.2rem;background:linear-gradient(135deg,#7C3AED,#4F46E5);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.83rem;font-weight:600;">Run Transformer Forecast</button>
+        </div>
+        <div id="chart-ml-transformer" style="height:300px;"></div>
+        <div id="ml-transformer-metrics"></div>
+      </div>
+    </div>
   </div>
 
   <div class="footer">Customer Analytics &nbsp;·&nbsp; DVD Rental Intelligence &nbsp;·&nbsp; 🤖 AI-Powered by Groq</div>
@@ -3207,7 +3221,31 @@ Data dari model ML endpoint beneran.`;
     document.getElementById('sendBtn').disabled = false;
     return;
   }
- 
+
+  // TRANSFORMER INTENT
+  const isTransformer = /transformer|time.?series|transformer.*forecast|forecast.*transformer/.test(text);
+  if (isTransformer) {
+    input.value = '';
+    addUserMsg(text);
+    const tid = addTyping();
+    try {
+      const data = await apiFetch('/api/ml/transformer-forecast');
+      document.getElementById(tid)?.remove();
+      const preds = (data.predicted_3_months||[]).map((p,i)=>`Bulan +${i+1}: $${parseFloat(p).toLocaleString('en-US',{minimumFractionDigits:2})}`).join('\n');
+      const msg = `Hasil Transformer Time Series Forecast:\n- Prediksi bulan depan: $${parseFloat(data.predicted_next_month).toLocaleString('en-US',{minimumFractionDigits:2})}\n- R² Score: ${data.r2_score} (${data.r2_label})\n- Perubahan vs bulan lalu: ${data.change_percent>=0?'+':''}${data.change_percent}%\n\nForecast 3 bulan ke depan:\n${preds}\n\nAlgoritma: ${data.algorithm_detail}`;
+      addAiMsg(msg);
+      chatHistory.push({role:'user', content: text});
+      chatHistory.push({role:'assistant', content: msg});
+      setTab('ml');
+      setTimeout(()=>loadMLTransformer(), 400);
+    } catch(e) {
+      document.getElementById(tid)?.remove();
+      addAiMsg('Gagal fetch Transformer endpoint: ' + e.message + '. Pastikan backend.py sudah diupdate.');
+    }
+    document.getElementById('sendBtn').disabled = false;
+    return;
+  }
+
   // ══════════════════════════════════════════════════════════
   // CREATE CHART INTENT — buat chart baru di dashboard
   // Kata kunci: "create chart", "buat chart", "tambahkan chart", "add chart"
@@ -3541,11 +3579,143 @@ function speakResponse(text) {
   window.speechSynthesis.speak(utter);
 }
 
-// Auto-load voices (Chrome lazy loads)
-if (window.speechSynthesis) {
-  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+// ══════════════════════════════════════════════════════════════
+// TRANSFORMER TIME SERIES FORECAST
+// ══════════════════════════════════════════════════════════════
+async function loadMLTransformer() {
+  const btn = document.querySelector('#ml-transformer-result button');
+  if (btn) { btn.disabled = true; btn.textContent = 'Loading...'; }
+  try {
+    const data = await apiFetch('/api/ml/transformer-forecast');
+
+    // ── Metrics card ──
+    const metrics = document.getElementById('ml-transformer-metrics');
+    metrics.style.display = 'flex';
+    metrics.innerHTML = `
+      <div style="flex:1;min-width:130px;background:linear-gradient(135deg,#7C3AED22,#4F46E511);border:1px solid #7C3AED44;border-radius:10px;padding:0.75rem 1rem;">
+        <div style="font-size:0.7rem;color:var(--gray);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">MODEL</div>
+        <div style="font-size:0.9rem;font-weight:700;color:#7C3AED;margin-top:0.2rem;">Transformer</div>
+      </div>
+      <div style="flex:1;min-width:130px;background:linear-gradient(135deg,#10B98122,#10B98111);border:1px solid #10B98144;border-radius:10px;padding:0.75rem 1rem;">
+        <div style="font-size:0.7rem;color:var(--gray);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">AKURASI (R²)</div>
+        <div style="font-size:0.9rem;font-weight:700;color:#10B981;margin-top:0.2rem;">${(data.r2_score*100).toFixed(1)}% (${data.r2_label})</div>
+      </div>
+      <div style="flex:1;min-width:130px;background:linear-gradient(135deg,#F59E0B22,#F59E0B11);border:1px solid #F59E0B44;border-radius:10px;padding:0.75rem 1rem;">
+        <div style="font-size:0.7rem;color:var(--gray);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">PREDIKSI BULAN DEPAN</div>
+        <div style="font-size:0.9rem;font-weight:700;color:#F59E0B;margin-top:0.2rem;">$${parseFloat(data.predicted_next_month).toLocaleString('en-US',{minimumFractionDigits:2})}</div>
+      </div>
+      <div style="flex:1;min-width:130px;background:${data.change_percent>=0?'linear-gradient(135deg,#10B98122,#10B98111)':'linear-gradient(135deg,#EF444422,#EF444411)'};border:1px solid ${data.change_percent>=0?'#10B98144':'#EF444444'};border-radius:10px;padding:0.75rem 1rem;">
+        <div style="font-size:0.7rem;color:var(--gray);font-weight:600;text-transform:uppercase;letter-spacing:.05em;">PERUBAHAN</div>
+        <div style="font-size:0.9rem;font-weight:700;color:${data.change_percent>=0?'#10B981':'#EF4444'};margin-top:0.2rem;">${data.change_percent>=0?'+':''}${data.change_percent}%</div>
+      </div>`;
+
+    // ── Chart: Historical + Fitted + 3-month forecast ──
+    const hist  = data.historical || [];
+    const fitted = data.fitted || [];
+    const preds  = data.predicted_3_months || [6];
+
+    // Future month labels
+    const lastMonth = hist.length ? hist[hist.length-1].month : '2007-05';
+    const [yr, mo] = lastMonth.split('-').map(Number);
+    const futureLabels = Array.from({length:3},(_,i)=>{
+      const d = new Date(yr, mo + i, 1);
+      return d.toISOString().slice(0,7);
+    });
+
+    const PURPLE = '#7C3AED';
+    const layout = {
+      paper_bgcolor:'transparent', plot_bgcolor:'transparent',
+      margin:{l:60,r:20,t:20,b:60}, font:{family:'Inter,sans-serif',size:10},
+      xaxis:{showgrid:false, tickangle:-30, tickfont:{size:9}},
+      yaxis:{showgrid:true, gridcolor:'#E2E8F022', tickprefix:'$', tickfont:{size:9}},
+      legend:{orientation:'h', yanchor:'bottom', y:1.02, xanchor:'right', x:1, font:{size:9}},
+      hovermode:'x unified'
+    };
+
+    Plotly.newPlot('chart-ml-transformer', [
+      { // Historical actual
+        x: hist.map(d=>d.month), y: hist.map(d=>d.revenue),
+        type:'scatter', mode:'lines+markers', name:'Actual Revenue',
+        line:{color:'#94A3B8', width:2}, marker:{color:'#94A3B8', size:4},
+        hovertemplate:'<b>%{x}</b><br>Actual: $%{y:,.2f}<extra></extra>'
+      },
+      { // Fitted (transformer output)
+        x: fitted.map(d=>d.month), y: fitted.map(d=>d.fitted),
+        type:'scatter', mode:'lines', name:'Transformer Fitted',
+        line:{color:PURPLE, width:2, dash:'dot'},
+        hovertemplate:'<b>%{x}</b><br>Fitted: $%{y:,.2f}<extra></extra>'
+      },
+      { // 3-month forecast
+        x: [hist[hist.length-1]?.month, ...futureLabels],
+        y: [hist[hist.length-1]?.revenue, ...preds],
+        type:'scatter', mode:'lines+markers', name:'Forecast (3 bulan)',
+        line:{color:'#F59E0B', width:2.5, dash:'dash'},
+        marker:{color:'#F59E0B', size:7, symbol:'diamond'},
+        hovertemplate:'<b>%{x}</b><br>Forecast: $%{y:,.2f}<extra></extra>'
+      }
+    ], layout, {responsive:true, displayModeBar:false});
+
+    // Update result area
+    document.getElementById('ml-transformer-result').innerHTML =
+      `<div style="font-size:0.8rem;color:var(--gray);">${data.message}</div>
+       <div style="font-size:0.75rem;color:var(--gray);margin-top:0.3rem;opacity:0.7;">
+         Window size: ${data.window_size} bulan · ${data.algorithm_detail}
+       </div>`;
+
+  } catch(e) {
+    document.getElementById('ml-transformer-result').innerHTML =
+      `<div style="color:#EF4444;font-size:0.82rem;">Gagal load Transformer: ${e.message}<br>Pastikan backend.py sudah diupdate dan dijalankan ulang.</div>`;
+  }
 }
 
+// Auto-load transformer if tab ml active
+// HAPUS BLOK INI (baris 3672-3678):
+{(function patchSetTabForTransformer(){
+  const _orig = window.setTab;
+  if(!_orig) return;
+  window.setTab = function(tab){
+    _orig(tab);
+  };
+})();
+
+
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+// ── FIX CSV: intercept teks "export_csv" dari AI dan langsung execute ──
+const _origSendMsg2 = sendMessage;
+sendMessage = async function() {
+  _origSendMsg2.apply(this, arguments);
+};
+
+// Patch addAiMsg untuk intercept response AI yang contain export_csv
+const _origAddAiMsg = addAiMsg;
+addAiMsg = function(text) {
+  _origAddAiMsg(text);
+  // Detect pola: export_csv dataset=xxx month=yyy atau customer=zzz
+  const csvMatch = text.match(/export_csv\s+dataset=(\S+)(?:\s+month=(\S+))?(?:\s+customer[_\s]*(?:name)?=([^\n,]+))?/i);
+  if (csvMatch) {
+    const dataset    = csvMatch[1]?.trim();
+    const month      = csvMatch[2]?.trim();
+    const custName   = csvMatch[3]?.trim();
+    setTimeout(() => exportCSV(dataset, month, custName), 300);
+  }
+
+  // Detect pola alternatif: "export_csv" tanpa parameter tapi ada kata kunci
+  const lowerText = text.toLowerCase();
+  if (!csvMatch) {
+    if (/export.*monthly|csv.*monthly|monthly.*csv/.test(lowerText)) {
+      setTimeout(() => exportCSV('monthly'), 300);
+    } else if (/export.*customer(?!_history)|csv.*customer(?!_history)/.test(lowerText)) {
+      setTimeout(() => exportCSV('customers'), 300);
+    } else if (/export.*rfm|csv.*rfm/.test(lowerText)) {
+      setTimeout(() => exportCSV('rfm'), 300);
+    } else if (/export.*genre_monthly|csv.*genre.*month/.test(lowerText)) {
+      setTimeout(() => exportCSV('genre_monthly'), 300);
+    } else if (/export.*loyal.*region|csv.*loyal.*region/.test(lowerText)) {
+      setTimeout(() => exportCSV('loyal_region'), 300);
+    }
+  }
+};
 </script>
 </body>
 </html>

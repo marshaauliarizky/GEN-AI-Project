@@ -571,6 +571,13 @@ def ml_summary():
                 "endpoint": "/api/ml/churn-prediction",
                 "description": "Prediksi customer yang berpotensi tidak kembali (churn)",
                 "features": ["recency_days", "frequency", "monetary", "avg_payment", "avg_duration"]
+            },
+            {
+                "name": "Transformer Time Series Forecast",
+                "algorithm": "Sliding Window Attention + Ridge Regression",
+                "endpoint": "/api/ml/transformer-forecast",
+                "description": "Prediksi revenue 3 bulan ke depan dengan pendekatan transformer-style",
+                "features": ["attended_window", "global_context", "variability", "trend_direction"]
             }
         ]
     }
@@ -673,6 +680,134 @@ def ml_revenue_forecast_extended():
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ══════════════════════════════════════════════════════════════
+# 🤖 Transformer Time Series Forecasting (Scikit-learn based)
+# Simulates transformer-style multi-step attention using:
+# - Sliding window sequences (like transformer input windows)
+# - Multi-feature attention weights (manual softmax)
+# - Ridge Regression as the final predictor (like transformer output head)
+# ══════════════════════════════════════════════════════════════
+@app.get("/api/ml/transformer-forecast")
+def ml_transformer_forecast():
+    """Transformer-style Time Series Forecast untuk revenue (scikit-learn)."""
+    try:
+        rows = run_query("""
+            SELECT
+                TO_CHAR(DATE_TRUNC('month', payment_date), 'YYYY-MM') AS month,
+                ROUND(SUM(amount)::numeric, 2) AS revenue
+            FROM payment
+            GROUP BY 1
+            ORDER BY 1
+        """)
+        if len(rows) < 5:
+            raise HTTPException(status_code=400, detail="Data terlalu sedikit untuk Transformer forecast")
+
+        df = pd.DataFrame(rows)
+        df['revenue'] = df['revenue'].astype(float)
+        revenues = df['revenue'].values.tolist()
+        months   = df['month'].tolist()
+
+        # ── Normalisasi (seperti embedding layer) ──
+        scaler = StandardScaler()
+        rev_scaled = scaler.fit_transform(np.array(revenues).reshape(-1, 1)).flatten()
+
+        # ── Sliding window (seperti token window di transformer) ──
+        window = 3
+        X, y = [], []
+        for i in range(window, len(rev_scaled)):
+            seq = rev_scaled[i-window:i]
+
+            # ── Manual attention weights (softmax over window) ──
+            # Posisi terakhir = paling penting (positional bias)
+            pos_scores = np.array([0.2, 0.3, 0.5])  # bobot posisional
+            attn_weights = np.exp(pos_scores) / np.sum(np.exp(pos_scores))
+            attended_seq = seq * attn_weights  # weighted sequence
+
+            # ── Feature engineering (feed-forward style) ──
+            features = list(attended_seq) + [
+                float(np.mean(seq)),       # global context
+                float(np.std(seq)),        # variability
+                float(seq[-1] - seq[0]),   # trend direction
+            ]
+            X.append(features)
+            y.append(rev_scaled[i])
+
+        X = np.array(X)
+        y = np.array(y)
+
+        # ── Ridge Regression sebagai output head ──
+        from sklearn.linear_model import Ridge
+        from sklearn.metrics import r2_score as sk_r2
+        model = Ridge(alpha=1.0)
+        model.fit(X, y)
+        y_pred = model.predict(X)
+        r2 = float(sk_r2(y, y_pred))
+
+        # ── Save model ke file .pkl ──
+        import joblib
+        import os
+
+        model_dir = "saved_models"
+        os.makedirs(model_dir, exist_ok=True)
+        joblib.dump(model, f"{model_dir}/transformer_ridge_model.pkl")
+        joblib.dump(scaler, f"{model_dir}/transformer_scaler.pkl")
+
+
+        # ── Prediksi 3 bulan ke depan ──
+        temp = list(rev_scaled)
+        future_scaled = []
+        for _ in range(3):
+            seq = np.array(temp[-window:])
+            pos_scores = np.array([0.2, 0.3, 0.5])
+            attn_weights = np.exp(pos_scores) / np.sum(np.exp(pos_scores))
+            attended_seq = seq * attn_weights
+            features = list(attended_seq) + [
+                float(np.mean(seq)),
+                float(np.std(seq)),
+                float(seq[-1] - seq[0]),
+            ]
+            pred = float(model.predict(np.array([features]))[0])
+            future_scaled.append(pred)
+            temp.append(pred)
+
+        # ── Denormalisasi ──
+        future_rev = scaler.inverse_transform(
+            np.array(future_scaled).reshape(-1, 1)
+        ).flatten().tolist()
+        future_rev = [round(max(0, v), 2) for v in future_rev]
+
+        # ── Fitted values (historical) ──
+        fitted_scaled = model.predict(X)
+        fitted_rev = scaler.inverse_transform(
+            fitted_scaled.reshape(-1, 1)
+        ).flatten().tolist()
+        fitted_rev = [round(v, 2) for v in fitted_rev]
+
+        last_actual = round(revenues[-1], 2)
+        next_pred   = future_rev[0]
+        change_pct  = round((next_pred - last_actual) / last_actual * 100, 1) if last_actual else 0
+
+        return {
+            "model": "Transformer Time Series (Scikit-learn)",
+            "algorithm_detail": "Sliding Window + Positional Attention + Ridge Regression Head",
+            "r2_score": round(r2, 4),
+            "r2_label": "Excellent" if r2 >= 0.9 else "Good" if r2 >= 0.7 else "Fair",
+            "window_size": window,
+            "last_month_revenue": last_actual,
+            "predicted_next_month": next_pred,
+            "predicted_3_months": future_rev,
+            "change_percent": change_pct,
+            "historical": [{"month": m, "revenue": float(r)} for m, r in zip(months, revenues)],
+            "fitted": [{"month": m, "fitted": float(f)} for m, f in zip(months[window:], fitted_rev)],
+            "message": f"Transformer forecast: bulan depan ${next_pred:,.2f} ({'+' if change_pct>=0 else ''}{change_pct}% vs bulan lalu)"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Transformer ML error: {str(e)}\n{traceback.format_exc()}")
+
 
 @app.get("/api/customer-history/{customer_id}")
 def customer_history(customer_id: int):
