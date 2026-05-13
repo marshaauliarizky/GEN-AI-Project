@@ -1,7 +1,6 @@
 # GenAI Project Customer Analytics Dashboard
 
-**DVD Rental Intelligence**  
-President University Information System  
+**DVD Rental Intelligence**    
 Team: Fatwa, Marsha, Syakira
 
 
@@ -17,8 +16,8 @@ GenAI Project is a Customer Analytics Dashboard built on the **dvdrental** Postg
 - Behavior favorite genres, rental frequency, duration, and revenue correlation
 - Loyalty & Segments RFM-based segmentation and spending tier breakdown
 - Customer Detail individual customer lookup with full rental and payment history
-- ML Predictions revenue forecasting and churn risk using Linear Regression & Random Forest
-
+- ML Predictions revenue forecasting and churn risk using Linear Regression, Random Forest, and Transformer Time Series
+  
 **AI Chatbot (FAMS AI)**
 - Natural language assistant powered by Groq API
 - Can execute dashboard actions via chat: change chart types, switch themes, navigate tabs, apply filters
@@ -71,9 +70,10 @@ python backend.py
 ## File Structure
 
 GenAI-Project/
-├── backend.py              # FastAPI backend — data endpoints & ML models
-├── coba_connected.html     # Main dashboard frontend
-├── test_groq.py            # Groq API connection test
+├── backend.py
+├── coba_connected.html
+├── test_groq.py
+├── saved_models/
+│   ├── transformer_ridge_model.pkl
+│   └── transformer_scaler.pkl
 └── .gitignore
-
-FAMS Team: Fatwa, Marsha, Syakira.
