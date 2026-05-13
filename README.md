@@ -76,6 +76,4 @@ GenAI-Project/
 ├── test_groq.py            # Groq API connection test
 └── .gitignore
 
-
-This project was created for academic purposes at President University.  
-© 2026 FAMS Team — Fatwa, Marsha, Syakira.
+FAMS Team — Fatwa, Marsha, Syakira.
